@@ -1,0 +1,17 @@
+<use   name="DataFormats/ParticleFlowCandidate"/>
+<use   name="DataFormats/PatCandidates"/>
+<use   name="DataFormats/TrackReco"/>
+<use   name="DataFormats/BeamSpot"/>
+<use   name="FWCore/Framework"/>
+<use   name="FWCore/ParameterSet"/>
+<use   name="FWCore/MessageLogger"/>
+<use   name="FWCore/ServiceRegistry"/>
+<use   name="Geometry/CommonDetUnit"/>
+<use   name="PhysicsTools/UtilAlgos"/>
+<use   name="TrackingTools/TransientTrack"/>
+<use   name="TrackingTools/Records"/>
+<use   name="TrackingTools/TrajectoryState"/>
+<use   name="TrackingTools/PatternTools"/>
+<library   file="*.cc" name="FilterToVertexingProducedrPlugins">
+  <flags   EDM_PLUGIN="1"/>
+</library>
