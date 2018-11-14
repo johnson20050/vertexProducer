@@ -63,6 +63,11 @@ void mumuVertexingProducer::produce(edm::Event& iEvent, const edm::EventSetup& i
         // Create shared_ptr for each collection to be stored in the Event
         std::unique_ptr< reco::VertexCompositeCandidateCollection >
         tktkCandList( new reco::VertexCompositeCandidateCollection );
+        if ( mumuFitting.nothingToWritten(i) )
+        {
+            iEvent.put( std::move(tktkCandList), mumuFitting.getCandName(i) );
+            continue;
+        }
         const reco::VertexCompositeCandidateCollection& tktkCandCollection = mumuFitting.getCands(i);
         tktkCandList->reserve( tktkCandCollection.size() );
         std::copy( tktkCandCollection.begin(), tktkCandCollection.end(), std::back_inserter(*tktkCandList) );

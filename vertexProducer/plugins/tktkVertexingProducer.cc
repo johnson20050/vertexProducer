@@ -65,7 +65,6 @@ void tktkVertexingProducer::produce(edm::Event& iEvent, const edm::EventSetup& i
         //std::shared_ptr< reco::VertexCompositeCandidateCollection >
         std::unique_ptr< reco::VertexCompositeCandidateCollection >
         tktkCandList( new reco::VertexCompositeCandidateCollection );
-        //if ( tktkCandCollection.size() == 0 )
         if ( tktkFitting.nothingToWritten(i) )
         {
             iEvent.put( std::move(tktkCandList), tktkFitting.getCandName(i) );

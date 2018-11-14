@@ -118,8 +118,6 @@ private:
     bool useRefTrax;
     std::string vtxFitter;
 
-//const edm::EDGetTokenT<reco::BeamSpot>  beamspotToken;
-//    const edm::EDGetTokenT<myMuonList>      selMuonsToken;
 
 public:
     // Helper method that does the actual fitting using the KalmanVertexFitter
@@ -142,6 +140,7 @@ public:
     }
     std::string getCandName(unsigned i) { return optS[i][candName]; }
     unsigned getNParticles() { return nParticles; }
+    bool nothingToWritten(unsigned i) { return nCandsSize[i] == 0 ? true : false; }
     void clearSomething();
 };
 

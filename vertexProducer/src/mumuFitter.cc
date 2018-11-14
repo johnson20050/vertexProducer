@@ -125,6 +125,7 @@ mumuFitter::~mumuFitter()
 // Method containing the algorithm for vertex reconstruction
 void mumuFitter::fitAll(const edm::Event & iEvent, const edm::EventSetup & iSetup)
 {
+    clearSomething();
 
     using std::vector;
     using std::cout;
@@ -443,6 +444,16 @@ const reco::VertexCompositeCandidateCollection& mumuFitter::getCands(unsigned i)
         printf("tktkFitter::getCands() : no tktkCands returned, please check\n");
         exit(1);
     }
+    if ( i >= nParticles ) 
+    {
+        printf("tktkFitter::getCands() : input particle number bigger than tot number of particles!\n");
+        exit(1);
+    }
+    if ( !tktkCands[i] )
+    {
+        printf("tktkFitter::getCands() : no tktkCands returned, please check(2)\n");
+        exit(1);
+    }
     return *(tktkCands[i]);
 }
 
@@ -470,6 +481,7 @@ void mumuFitter::enlargeAllContainer()
         delete[] tmpContainerToTkTkCands[i];
         tmpContainerToTkTkCands[i] = tmp[i];
     }
+    delete[] tmp;
     return;
 }
 void mumuFitter::fillInContainer()
@@ -479,10 +491,11 @@ void mumuFitter::fillInContainer()
         reco::VertexCompositeCandidateCollection* tmpCollection
             = new reco::VertexCompositeCandidateCollection( tmpContainerToTkTkCands[i], tmpContainerToTkTkCands[i] + nCandsSize[i]);
         tktkCands[i] = tmpCollection;
-        return;
+        delete[] tmpContainerToTkTkCands[i];
+        tmpContainerToTkTkCands[i] = nullptr;
     }
+    return;
 }
-
 void mumuFitter::clearSomething()
 {
     for ( unsigned i=0; i<nParticles; ++i )

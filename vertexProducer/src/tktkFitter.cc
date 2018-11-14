@@ -481,6 +481,7 @@ void tktkFitter::enlargeAllContainer()
         delete[] tmpContainerToTkTkCands[i];
         tmpContainerToTkTkCands[i] = tmp[i];
     }
+    delete[] tmp;
     return;
 }
 void tktkFitter::fillInContainer()
@@ -488,8 +489,10 @@ void tktkFitter::fillInContainer()
     for ( unsigned i=0; i<nParticles; ++i )
     {
         reco::VertexCompositeCandidateCollection* tmpCollection
-            = new reco::VertexCompositeCandidateCollection( tmpContainerToTkTkCands[i], tmpContainerToTkTkCands[i] + nCandsSize[i]);
+            = new reco::VertexCompositeCandidateCollection( tmpContainerToTkTkCands[i], tmpContainerToTkTkCands[i] + nCandsSize[i] );
         tktkCands[i] = tmpCollection;
+        delete[] tmpContainerToTkTkCands[i];
+        tmpContainerToTkTkCands[i] = nullptr;
     }
     return;
 }
