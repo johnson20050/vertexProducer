@@ -98,6 +98,7 @@ void ccLoader::calc(const edm::Event & iEvent, const edm::EventSetup & iSetup)
         {
             const reco::VertexCompositeCandidate& cand = *iter++;
             fillHisto("mass", cand.mass());
+            //printf("hii\n");
         }
     }
     if ( usePAT )
@@ -136,5 +137,7 @@ void ccLoader::createHisto(const std::string & name, int nbin, float hmin, float
 }
 void ccLoader::createHistos()
 {
-    createHisto("mass", 60, 1.0, 1.3);
+    //createHisto("mass", 60, 1.0, 1.3);
+    createHisto("mass", 60, 2.8, 3.3);
+
 }

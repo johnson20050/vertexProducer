@@ -33,13 +33,18 @@ compCandAnalyzer::compCandAnalyzer(const edm::ParameterSet& iConfig)
         = iConfig.getParameter < std::vector < edm::ParameterSet >> ("recoOptions");
     nParticles = subConfigs.size();
     loaders = new ccLoader* [nParticles];
-    dirs = new TFileDirectory* [nParticles];
+    dirs.reserve( nParticles );
 
     for ( unsigned idx = 0; idx < nParticles; ++idx )
     {
+        std::string  name = subConfigs[idx].getParameter<std::string>("candName");
         loaders[idx] = new ccLoader( subConfigs[idx], consumesCollector() );
-        dirs[idx] = new TFileDirectory( fs->mkdir(subConfigs[idx].getParameter<std::string>("candName").c_str()) );
-        loaders[idx]->setOutput( dirs[idx] );
+        TFileDirectory tmpDir = fs->mkdir(subConfigs[idx].getParameter<std::string>("candName"));
+        tmpDir.make<TH1F>("dummyHist","", 10, 0., 10.);
+        dirs.push_back( tmpDir );
+
+        loaders[idx]->setOutput( &dirs[idx] );
+        loaders[idx]->createHistos();
     }
     return;
 }
@@ -50,11 +55,9 @@ compCandAnalyzer::~compCandAnalyzer()
     for ( unsigned idx = 0; idx < nParticles; ++idx )
     {
         delete loaders[idx];
-        delete dirs[idx];
     }
 
     delete loaders;
-    delete dirs;
 }
 
 void compCandAnalyzer::fillDescriptions( edm::ConfigurationDescriptions& descriptions )

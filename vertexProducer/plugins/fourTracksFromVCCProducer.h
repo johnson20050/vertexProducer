@@ -17,51 +17,42 @@
 //
 //
 
-#ifndef __compCandAnalyzer_H__
-#define __compCandAnalyzer_H__
+#ifndef __TKTKVERTEXINGPRODUCER_H__
+#define __TKTKVERTEXINGPRODUCER_H__
 
 // system include files
 #include <memory>
 
 // user include files
+#include "FWCore/Framework/interface/Frameworkfwd.h"
+#include "FWCore/Framework/interface/EDProducer.h"
 
 #include "FWCore/Framework/interface/Event.h"
-#include "FWCore/Framework/interface/ESHandle.h"
-#include "FWCore/Framework/interface/EDAnalyzer.h"
-#include "FWCore/Framework/interface/Frameworkfwd.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
-#include "FWCore/ParameterSet/interface/ParameterSet.h"
-#include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
-#include "FWCore/ServiceRegistry/interface/Service.h"
 
+#include "FWCore/ParameterSet/interface/ParameterSet.h"
+
+#include "FWCore/Framework/interface/ESHandle.h"
 
 #include "DataFormats/VertexReco/interface/Vertex.h"
 //#include "DataFormats/V0Candidate/interface/V0Candidate.h"
 #include "DataFormats/Candidate/interface/VertexCompositeCandidate.h"
-#include "CommonTools/UtilAlgos/interface/TFileService.h"
 
+#include "vertexProducer/vertexProducer/interface/mumuFitter.h"
 
-#include "vertexProducer/vertexProducer/interface/ccLoader.h"
-
-class compCandAnalyzer : public edm::EDAnalyzer
+class mumuVertexingProducer : public edm::EDProducer
 {
 public:
-    explicit compCandAnalyzer(const edm::ParameterSet&);
-    ~compCandAnalyzer();
+    explicit mumuVertexingProducer(const edm::ParameterSet&);
+    ~mumuVertexingProducer();
 
+private:
     //virtual void beginJob() ;
     virtual void beginJob();
-    virtual void analyze(const edm::Event&, const edm::EventSetup&) override;
+    virtual void produce(edm::Event&, const edm::EventSetup&);
     virtual void endJob() ;
 
-    static void fillDescriptions( edm::ConfigurationDescriptions& descriptions );
-private:
-    edm::Service<TFileService> fs;
-
-    unsigned nParticles;
-
-    ccLoader** loaders;
-    std::vector<TFileDirectory> dirs;
+    mumuFitter mumuFitting;
 
 };
 
