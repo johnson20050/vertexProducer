@@ -18,8 +18,8 @@
 //
 //
 
-#ifndef __TKTKFITTER_H__
-#define __TKTKFITTER_H__
+#ifndef __fourTracksFitter_H__
+#define __fourTracksFitter_H__
 
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/ESHandle.h"
@@ -55,37 +55,31 @@
 #include <fstream>
 #include <stdio.h>
 
-typedef reco::Track myTrack;
-typedef std::vector<myTrack> myTrackList;
-typedef pat::Muon   myMuon;
-typedef std::vector<myMuon>  myMuonList;
-
-class mumutktkFitter
+class fourTracksFitter
 {
 public:
-    mumutktkFitter(const edm::ParameterSet& theParams,
-               edm::ConsumesCollector&& iC );
-    ~mumutktkFitter();
+    fourTracksFitter(const edm::ParameterSet& theParams,
+                edm::ConsumesCollector&& iC );
+    virtual ~fourTracksFitter();
 
     // Switching to L. Lista's reco::Candidate infrastructure for V0 storage
-    const reco::VertexCompositeCandidateCollection& getCands(unsigned i) const;
+    const reco::VertexCompositeCandidateCollection& getFourTkCands() const;
 
-private:
+protected:
     // STL vector of VertexCompositeCandidate that will be filled with VertexCompositeCandidates by fitAll()
     // due to the characteristics of std::vector. It is not able to use some function in array.
     // Ensure what are you doing before you use some function like "push_back", "erase",
     // which changes the size of the array.
-    reco::VertexCompositeCandidateCollection** tktkCands;
-    reco::VertexCompositeCandidate** tmpContainerToTkTkCands;
-    void enlargeAllContainer();
+    reco::VertexCompositeCandidateCollection* tktkCands;
+    reco::VertexCompositeCandidate* tmpContainerToTkTkCands;
+    void enlargeContainer();
     void fillInContainer();
 
     // size to tmp container. If the number of candidates spill out the tmp contaier, it need to find larger container automatically.
-    unsigned* nCandsSize;
+    unsigned nCandsSize;
     unsigned tmpContainerSize;
 
     // Tracker geometry for discerning hit positions
-    const TrackerGeometry* trackerGeom;
 
     const MagneticField* magField;
 
@@ -94,10 +88,9 @@ private:
     edm::EDGetTokenT< reco::BeamSpot                           > beamspotToken;
 
     // variables to be decided from python file
-    double** optD;
-    bool**   optB;
-    std::string** optS;
-    unsigned nParticles;
+    double* optD;
+    bool*   optB;
+    std::string* optS;
 
     double chi2Cut, rVtxCut, tkDCACut, innerHitPosCut;
     bool useRefTrax;
@@ -105,7 +98,11 @@ private:
 
     enum parD
     {
-        pTkMass, nTkMass, tktkMass, tktkMassCut, vtxSigCut,
+        FDSigPreCut_tktkTomumu, Cosa2dPreCut_tktkTomumu, 
+        FDSigCut_mumutktkToBS, vtxprobCut, 
+        mCandMassCut, MCandMassCut, 
+        muPosMass, muNegMass, tkPosMass, tkNegMass, muPosSigma, muNegSigma, tkPosSigma, tkNegSigma,
+        mumuMassConstraint, 
         totNumD
     };
     enum parB
@@ -114,34 +111,23 @@ private:
     };
     enum parS
     {
-        candName, pTkName, nTkName,
+        candName, tkPosName, tkNegName, muPosName, muNegName,
         totNumS
     };
 
 
 public:
     // Helper method that does the actual fitting using the KalmanVertexFitter
-    void fitAll(const edm::Event& iEvent, const edm::EventSetup& iSetup);
-    double findV0MassError(const GlobalPoint &vtxPos, std::vector<reco::TransientTrack> dauTracks);
+    virtual void fitAll(const edm::Event& iEvent, const edm::EventSetup& iSetup) = 0;
 
-    // Applies cuts to the VertexCompositeCandidates after they are fitted/created.
-    //void applyPostFitCuts();
+    std::string getFourTkCandName() { return optS[candName]; }
+    bool nothingToWritten() { return nCandsSize == 0 ? true : false; }
+    void clearAndInitializeContainer();
 
-    // Stuff for debug file output.
-    std::ofstream mPiPiMassOut;
 
-    inline void initFileOutput()
-    {
-        mPiPiMassOut.open("mPiPi.txt", std::ios::app);
-    }
-    inline void cleanupFileOutput()
-    {
-        mPiPiMassOut.close();
-    }
-    std::string getCandName(unsigned i) { return optS[i][candName]; }
-    unsigned getNParticles() { return nParticles; }
-    bool nothingToWritten(unsigned i) { return nCandsSize[i] == 0 ? true : false; }
-    void clearSomething();
+    double FDSig(const reco::VertexCompositeCandidate& cand1, const reco::VertexCompositeCandidate& cand2);
+    double FDSig(const reco::VertexCompositeCandidate&  cand1, const reco::BeamSpot& bSpot);
+    double Cosa2d( const reco::VertexCompositeCandidate& cand1, const reco::VertexCompositeCandidate& cand2 );
 };
 
 #endif

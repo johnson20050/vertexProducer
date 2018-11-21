@@ -16,9 +16,15 @@ recoOptions = cms.VPSet(
             ),
         cms.PSet(
             vccLabel = cms.string('tktkVertexingProducer:Lam0:myVertexingProcedure'),
-           #patLabel = cms.string('lbWriteSpecificDecay:LbTkFitted:bphAnalysis'),
+           #patlabel = cms.string('lbwritespecificdecay:lbtkfitted:bphanalysis'),
+            beamspotLabel = cms.string('offlineBeamSpot::RECo'),
+            candName = cms.string('lambdafromtktk'),
+            ),
+        cms.PSet(
+            vccLabel = cms.string('fourTracksFromVCCProducer:LbTk:myFourTracksVertexingProcedure'),
+           #patlabel = cms.string('lbwritespecificdecay:lbtkfitted:bphanalysis'),
             beamspotLabel = cms.string('offlineBeamSpot::RECO'),
-            candName = cms.string('LambdaFromTkTk'),
+            candName = cms.string('LBfromfourTracks'),
             ),
         )
 

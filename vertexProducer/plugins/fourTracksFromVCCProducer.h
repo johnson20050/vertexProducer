@@ -17,11 +17,12 @@
 //
 //
 
-#ifndef __TKTKVERTEXINGPRODUCER_H__
-#define __TKTKVERTEXINGPRODUCER_H__
+#ifndef __fourTracksFromVCCProducer_H__
+#define __fourTracksFromVCCProducer_H__
 
 // system include files
 #include <memory>
+#include <vector>
 
 // user include files
 #include "FWCore/Framework/interface/Frameworkfwd.h"
@@ -38,22 +39,22 @@
 //#include "DataFormats/V0Candidate/interface/V0Candidate.h"
 #include "DataFormats/Candidate/interface/VertexCompositeCandidate.h"
 
-#include "vertexProducer/vertexProducer/interface/mumuFitter.h"
+#include "vertexProducer/vertexProducer/interface/fourTracksFitter.h"
 
-class mumuVertexingProducer : public edm::EDProducer
+class fourTracksFromVCCProducer : public edm::EDProducer
 {
 public:
-    explicit mumuVertexingProducer(const edm::ParameterSet&);
-    ~mumuVertexingProducer();
+    explicit fourTracksFromVCCProducer(const edm::ParameterSet&);
+    ~fourTracksFromVCCProducer();
+
+    //virtual void beginJob() ;
+    virtual void beginJob() override;
+    virtual void produce(edm::Event&, const edm::EventSetup&);
+    virtual void endJob() override;
+    static void fillDescriptions( edm::ConfigurationDescriptions& descriptions );
 
 private:
-    //virtual void beginJob() ;
-    virtual void beginJob();
-    virtual void produce(edm::Event&, const edm::EventSetup&);
-    virtual void endJob() ;
-
-    mumuFitter mumuFitting;
-
+    std::vector<fourTracksFitter*> myFitter;
 };
 
 #endif

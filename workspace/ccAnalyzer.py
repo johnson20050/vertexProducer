@@ -13,7 +13,10 @@ process.load('Configuration.StandardSequences.EndOfProcess_cff')
 process.MessageLogger.cerr.FwkReport.reportEvery = 1000
 
 process.source = cms.Source("PoolSource",fileNames =
-        cms.untracked.vstring('file:recoBPHanalysis_withFilter.root'),
+        cms.untracked.vstring(
+#'file:recoBPHanalysis_withFilter.root'
+'file:reco_fourTracksVertexing.root'
+),
         duplicateCheckMode = cms.untracked.string('noDuplicateCheck')
 )
 

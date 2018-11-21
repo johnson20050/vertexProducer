@@ -69,7 +69,7 @@ tktkVertexingProducer = cms.EDProducer("tktkVertexingProducer",
             tktkMass = cms.double(1.115683),
             tktkMassCut = cms.double(0.5),
             #   Radial vertex significance >
-            vtxSignificance2DCut = cms.double(9.9),
+            vtxSignificance2DCut = cms.double(15.),
             ),
         cms.PSet(
             pTkName = cms.string('Pion'),
@@ -80,7 +80,7 @@ tktkVertexingProducer = cms.EDProducer("tktkVertexingProducer",
             tktkMass = cms.double(1.115683),
             tktkMassCut = cms.double(0.5),
             #   Radial vertex significance >
-            vtxSignificance2DCut = cms.double(9.9),
+            vtxSignificance2DCut = cms.double(15.),
             ),
         ),
 )
