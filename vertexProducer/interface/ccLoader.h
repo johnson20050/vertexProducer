@@ -57,6 +57,7 @@
 #include <fstream>
 #include <stdio.h>
 #include "TH1F.h"
+#include "TNtupleD.h"
 
 
 class ccLoader
@@ -86,10 +87,12 @@ private:
     bool*   optB;
     std::string* optS;
     unsigned nParticles;
+    TNtupleD* nt;
 
     enum parD
     {
         pTkMass, nTkMass, tktkMass, tktkMassCut, vtxSigCut,
+        mMassRegion, MMassRegion,
 
         totNumD
     };

@@ -188,8 +188,8 @@ bool TrackProducer::IsMuonTrack(unsigned tkIdx, const myMuonList & muList) const
     {
         if (mu.track().isNonnull())
             continue;
-        if (fabs(tk.pt() - mu.track()->pt()) < 0.00001 &&
-                fabs(tk.eta() - mu.track()->eta()) < 0.00001 && fabs(tk.phi() - mu.track()->phi()) < 0.00001)
+        if (fabs(tk.pt() - mu.track()->pt()) < 0.001 &&
+                fabs(tk.eta() - mu.track()->eta()) < 0.001 && fabs(tk.phi() - mu.track()->phi()) < 0.001)
         {
             isMuonTrack = true;
             break;

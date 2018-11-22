@@ -90,13 +90,15 @@ fourTracksFitter::fourTracksFitter(const edm::ParameterSet & theParameters,
 
 fourTracksFitter::~fourTracksFitter()
 {
+    printf("~fourTracksFitter start\n");
     delete[] optD;
     delete[] optB;
     delete[] optS;
 
 
     delete[] tmpContainerToTkTkCands;
-    delete[] tktkCands;
+    delete tktkCands;
+    printf("~fourTracksFitter end\n");
     return;
 }
 

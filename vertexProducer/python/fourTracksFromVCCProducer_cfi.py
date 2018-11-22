@@ -7,28 +7,28 @@ fourTracksFromVCCProducer = cms.EDProducer("fourTracksFromVCCProducer",
             # select fitting method
             fittingMethod = cms.int32(1),
             # InputTag to load from data
-            tktkCandLabel = cms.InputTag('tktkVertexingProducer:Lam0:myVertexingProcedure'),
+            tktkCandLabel = cms.InputTag('tktkVertexingProducer:TkTk:myVertexingProcedure'),
             mumuCandLabel = cms.InputTag('mumuVertexingProducer:JPsi:myVertexingProcedure'),
             beamspotLabel = cms.InputTag('offlineBeamSpot::RECO'),
 
-            candName  = cms.string("LbL0"),
+            candName  = cms.string("LbTk"),
             muPosName = cms.string("MuPos"),
             muNegName = cms.string("MuNeg"),
             tkPosName = cms.string("Proton"),
-           #tkNegName = cms.string("Kaon"),
-            tkNegName = cms.string("Pion"),
+            tkNegName = cms.string("Kaon"),
+           #tkNegName = cms.string("Pion"),
 
             muPosMass = cms.double(0.1056583715),
             muNegMass = cms.double(0.1056583715),
             tkPosMass = cms.double(0.938272046),
-           #tkNegMass = cms.double(0.493667),
-            tkNegMass = cms.double(0.13957018),
+            tkNegMass = cms.double(0.493667),
+           #tkNegMass = cms.double(0.13957018),
 
             muPosSigma= cms.double(0.0000000035),
             muNegSigma= cms.double(0.0000000035),
             tkPosSigma= cms.double(0.000000006),
-           #tkNegSigma= cms.double(0.000016),
-            tkNegSigma= cms.double(0.00000035),
+            tkNegSigma= cms.double(0.000016),
+           #tkNegSigma= cms.double(0.00000035),
 
 
             # selection before vertexing
@@ -38,7 +38,7 @@ fourTracksFromVCCProducer = cms.EDProducer("fourTracksFromVCCProducer",
 
             # selection after vertexing
             FDSigCut_mumutktkToBS  = cms.double(2.9),
-            vtxprobCut             = cms.double(0.05),
+            vtxprobCut             = cms.double(0.005),
             mCandMassCut           = cms.double(5.4),
             MCandMassCut           = cms.double(5.9),
 

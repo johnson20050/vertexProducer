@@ -68,6 +68,8 @@ void compCandAnalyzer::fillDescriptions( edm::ConfigurationDescriptions& descrip
     dpar.add<std::string>( "patLabel", "" );
     dpar.add<std::string>( "vccLabel", "" );
     dpar.add<std::string>( "candName", "" );
+    dpar.add<double     >( "MassFrameMin", -999. );
+    dpar.add<double     >( "MassFrameMax", -999. );
 
     std::vector<edm::ParameterSet> dpars;
     desc.addVPSet( "recoOptions", dpar, dpars );

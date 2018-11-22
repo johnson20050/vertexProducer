@@ -39,16 +39,11 @@ void fourTracksFittingMethod1::fitAll(const edm::Event & iEvent, const edm::Even
     iEvent.getByToken(mumuPairToken, theMuMuPairHandle);
     iEvent.getByToken(tktkPairToken, theTkTkPairHandle);
     iEvent.getByToken(beamspotToken, theBeamSpotHandle);
-    if (theBeamSpotHandle.isValid()) std::cout << " get bs ";
-    if (theTkTkPairHandle.isValid()) std::cout << " get tk ";
-    if (theMuMuPairHandle.isValid()) std::cout << " get mu ";
-    std::cout << "\n";
     if (!theBeamSpotHandle.isValid()) return;
     if (!theTkTkPairHandle.isValid()) return;
     if (!theMuMuPairHandle.isValid()) return;
     if (!theMuMuPairHandle->size()) return;
     if (!theTkTkPairHandle->size()) return;
-            std::cout << "chk point00 \n";
     iSetup.get < IdealMagneticFieldRecord > ().get(bFieldHandle);
     iSetup.get < GlobalTrackingGeometryRecord > ().get(globTkGeomHandle);
     magField = bFieldHandle.product();
@@ -56,24 +51,22 @@ void fourTracksFittingMethod1::fitAll(const edm::Event & iEvent, const edm::Even
     // load mumuCandidate & tktkCandidate to do the vertexing
     for ( const VertexCompositeCandidate& mumuCand : *(theMuMuPairHandle.product()) )
     {
-            std::cout << "chk point01 \n";
+        const reco::RecoChargedCandidate* muPosCandPtr = dynamic_cast<const reco::RecoChargedCandidate*>( mumuCand.daughter(optS[muPosName]) );
+        const reco::RecoChargedCandidate* muNegCandPtr = dynamic_cast<const reco::RecoChargedCandidate*>( mumuCand.daughter(optS[muNegName]) );
         
         
         for ( const VertexCompositeCandidate& tktkCand : *(theTkTkPairHandle.product()) )
         {
             //reco::RecoChargedCandidate* tkPosCandPtr = tktkCand.daughter( optS[tkPosName] );
             //reco::RecoChargedCandidate* tkNegCandPtr = tktkCand.daughter( optS[tkNegName] );
-            std::cout << "chk point0 \n";
             const reco::RecoChargedCandidate* tkPosCandPtr = dynamic_cast<const reco::RecoChargedCandidate*>( tktkCand.daughter(optS[tkPosName]) );
             const reco::RecoChargedCandidate* tkNegCandPtr = dynamic_cast<const reco::RecoChargedCandidate*>( tktkCand.daughter(optS[tkNegName]) );
-        const reco::RecoChargedCandidate* muPosCandPtr = dynamic_cast<const reco::RecoChargedCandidate*>( mumuCand.daughter(optS[muPosName]) );
-        const reco::RecoChargedCandidate* muNegCandPtr = dynamic_cast<const reco::RecoChargedCandidate*>( mumuCand.daughter(optS[muNegName]) );
 
             // preselections
-            double fdSig = FDSig( tktkCand, mumuCand );
-            if ( fdSig > optD[FDSigPreCut_tktkTomumu] ) continue;
+            //double fdSig = FDSig( tktkCand, mumuCand );
+            //if ( fdSig > optD[FDSigPreCut_tktkTomumu] ) continue;
+            //if ( fdSig < 0.001 ) continue;
 
-            std::cout << "chk point1 \n";
 
             // build trackRef & TransientTracks
             reco::TrackRef muPosTkRef =  muPosCandPtr->track();
@@ -86,6 +79,16 @@ void fourTracksFittingMethod1::fitAll(const edm::Event & iEvent, const edm::Even
             reco::TransientTrack tkPosTransTk( *tkPosTkRef, &(*bFieldHandle), globTkGeomHandle );
             reco::TransientTrack tkNegTransTk( *tkNegTkRef, &(*bFieldHandle), globTkGeomHandle );
 
+            // for check
+            GlobalPoint tktkVTX ( tktkCand.vertex().x(),tktkCand.vertex().y(),  tktkCand.vertex().z() );
+            GlobalPoint mumuVTX ( mumuCand.vertex().x(),mumuCand.vertex().y(),  mumuCand.vertex().z() );
+            GlobalVector mpMom = muPosTransTk.trajectoryStateClosestToPoint(mumuVTX).momentum();
+            GlobalVector mnMom = muNegTransTk.trajectoryStateClosestToPoint(mumuVTX).momentum();
+            GlobalVector tpMom = tkPosTransTk.trajectoryStateClosestToPoint(tktkVTX).momentum();
+            GlobalVector tnMom = tkNegTransTk.trajectoryStateClosestToPoint(tktkVTX).momentum();
+            //printf("muPos : %f , muNeg : %f , tkPos : %f , tkNeg : %f \n", mpMom.mag(), mnMom.mag(), tpMom.mag(), tnMom.mag() );
+            if ( fabs(mpMom.mag()-tpMom.mag()) < 0.001 ) continue;
+            if ( fabs(mnMom.mag()-tnMom.mag()) < 0.001 ) continue;
 
             KinematicParticleFactoryFromTransientTrack pFactory;
             std::vector<RefCountedKinematicParticle> mumutktkCand;
@@ -94,10 +97,10 @@ void fourTracksFittingMethod1::fitAll(const edm::Event & iEvent, const edm::Even
             float m2sig = optD[muNegSigma];
             float m3sig = optD[tkPosSigma];
             float m4sig = optD[tkNegSigma];
-            mumutktkCand.emplace_back( pFactory.particle(muPosTransTk,optD[muPosMass], 0., 0., m1sig) );
-            mumutktkCand.emplace_back( pFactory.particle(muNegTransTk,optD[muNegMass], 0., 0., m2sig) );
-            mumutktkCand.emplace_back( pFactory.particle(tkPosTransTk,optD[tkPosMass], 0., 0., m3sig) );
-            mumutktkCand.emplace_back( pFactory.particle(tkNegTransTk,optD[tkNegMass], 0., 0., m4sig) );
+            mumutktkCand.push_back( pFactory.particle(muPosTransTk,optD[muPosMass], 0., 0., m1sig) );
+            mumutktkCand.push_back( pFactory.particle(muNegTransTk,optD[muNegMass], 0., 0., m2sig) );
+            mumutktkCand.push_back( pFactory.particle(tkPosTransTk,optD[tkPosMass], 0., 0., m3sig) );
+            mumutktkCand.push_back( pFactory.particle(tkNegTransTk,optD[tkNegMass], 0., 0., m4sig) );
 
             RefCountedKinematicTree fourTracksKineTree;
             if ( optD[mumuMassConstraint] > 0. )
@@ -135,7 +138,7 @@ void fourTracksFittingMethod1::fitAll(const edm::Event & iEvent, const edm::Even
 
             reco::VertexCompositeCandidate* fourTkCand =
                 new VertexCompositeCandidate(0, candP4, vtx, vtxCov, vtxChi2, vtxNdof);
-            if ( FDSig( *fourTkCand, *theBeamSpotHandle.product() ) > optD[FDSigCut_mumutktkToBS] )
+            if ( FDSig( *fourTkCand, *theBeamSpotHandle.product() ) < optD[FDSigCut_mumutktkToBS] )
             { delete fourTkCand; continue; }
 
 
@@ -186,7 +189,6 @@ void fourTracksFittingMethod1::fitAll(const edm::Event & iEvent, const edm::Even
             fourTkCand->setPdgId(5122);
             addp4.set(*fourTkCand);
 
-            std::cout << "chk point2 \n";
 
             if ( fourTkCand->mass() > optD[mCandMassCut] &&
                  fourTkCand->mass() < optD[MCandMassCut] )
