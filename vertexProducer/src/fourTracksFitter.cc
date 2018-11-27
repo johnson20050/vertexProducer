@@ -77,13 +77,25 @@ fourTracksFitter::fourTracksFitter(const edm::ParameterSet & theParameters,
     optD[tkPosSigma] = theParameters.getParameter < double > (string("tkPosSigma"));
     optD[tkNegSigma] = theParameters.getParameter < double > (string("tkNegSigma"));
 
-    optD[FDSigPreCut_tktkTomumu] = theParameters.getParameter<double>("FDSigPreCut_tktkTomumu");
-    optD[Cosa2dPreCut_tktkTomumu]= theParameters.getParameter<double>("Cosa2dPreCut_tktkTomumu");
+    // selection after vertexing
     optD[FDSigCut_mumutktkToBS]  = theParameters.getParameter<double>("FDSigCut_mumutktkToBS");
     optD[vtxprobCut]             = theParameters.getParameter<double>("vtxprobCut");
     optD[mCandMassCut]           = theParameters.getParameter<double>("mCandMassCut");
     optD[MCandMassCut]           = theParameters.getParameter<double>("MCandMassCut");
     optD[mumuMassConstraint]     = theParameters.getParameter<double>("mumuMassConstraint");
+
+    // selection before vertexing
+    optD[FDSigPreCut_tktkTomumu] = theParameters.getParameter<double>("FDSigPreCut_tktkTomumu");
+    optD[Cosa2dPreCut_tktkTomumu]= theParameters.getParameter<double>("Cosa2dPreCut_tktkTomumu");
+    optD[ptPreCut_muPos]         = theParameters.getParameter<double>("PtPreCut_muPos");
+    optD[ptPreCut_muNeg]         = theParameters.getParameter<double>("PtPreCut_muNeg");
+    optD[ptPreCut_tkPos]         = theParameters.getParameter<double>("PtPreCut_tkPos");
+    optD[ptPreCut_tkNeg]         = theParameters.getParameter<double>("PtPreCut_tkNeg");
+    optD[mMassPreCut_mumu]       = theParameters.getParameter<double>("mMassPreCut_mumu");
+    optD[MMassPreCut_mumu]       = theParameters.getParameter<double>("MMassPreCut_mumu");
+    optD[mMassPreCut_tktk]       = theParameters.getParameter<double>("mMassPreCut_tktk");
+    optD[MMassPreCut_tktk]       = theParameters.getParameter<double>("MMassPreCut_tktk");
+    
     
     return;
 }
@@ -197,3 +209,52 @@ double fourTracksFitter::Cosa2d( const reco::VertexCompositeCandidate& cand1, co
     GlobalVector momVec( momCand1.x()             , momCand1.y()             , 0. );
     return posVec.dot(momVec) / posVec.mag() / momVec.mag();
 }
+
+//void fourTracksFitter::recordParingSources(const edm::Event & iEvent, const edm::EventSetup & iSetup)
+//{
+//    if ( recorded ) return;
+//    // Handles for tracks, B-field, and tracker geometry
+//    edm::Handle < reco::VertexCompositeCandidateCollection > theMuMuPairHandle;
+//    edm::Handle < reco::VertexCompositeCandidateCollection > theTkTkPairHandle;
+//
+//    iEvent.getByToken(mumuPairToken, theMuMuPairHandle);
+//    iEvent.getByToken(tktkPairToken, theTkTkPairHandle);
+//    if (!theTkTkPairHandle.isValid()) return;
+//    if (!theMuMuPairHandle.isValid()) return;
+//    if (!theMuMuPairHandle->size()) return;
+//    if (!theTkTkPairHandle->size()) return;
+//    recordMuMuCands.reserve( theMuMuPairHandle->size() );
+//    recordTkTkCands.reserve( theTkTkPairHandle->size() );
+//
+//    // load mumuCandidate & tktkCandidate to do the vertexing
+//    for ( const VertexCompositeCandidate& mumuCand : *(theMuMuPairHandle.product()) )
+//    {
+//        const reco::RecoChargedCandidate* muPosCandPtr = dynamic_cast<const reco::RecoChargedCandidate*>( mumuCand.daughter(optS[muPosName]) );
+//        const reco::RecoChargedCandidate* muNegCandPtr = dynamic_cast<const reco::RecoChargedCandidate*>( mumuCand.daughter(optS[muNegName]) );
+//        recordMuMuCands.emplace_back(mumuCand);
+//
+//    }
+//        
+//    for ( const VertexCompositeCandidate& tktkCand : *(theTkTkPairHandle.product()) )
+//    {
+//        const reco::RecoChargedCandidate* tkPosCandPtr = dynamic_cast<const reco::RecoChargedCandidate*>( tktkCand.daughter(optS[tkPosName]) );
+//        const reco::RecoChargedCandidate* tkNegCandPtr = dynamic_cast<const reco::RecoChargedCandidate*>( tktkCand.daughter(optS[tkNegName]) );
+//        recordTkTkCands.emplace_back(tktkCand);
+//    }
+//
+//    recorded = true;
+//    return;
+//}
+//
+//void clearRecoredSources()
+//{
+//    recordMuMuCands.clear();
+//    recordTkTkCands.clear();
+//    recorded = false;
+//    return;
+//}
+//
+//
+//fourTracksFitter::recorded = false;
+//fourTracksFitter::recordMuMuCands;
+//fourTracksFitter::recordTkTkCands;

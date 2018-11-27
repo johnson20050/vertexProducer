@@ -210,6 +210,5 @@ void TrackProducer::fillDescriptions(edm::ConfigurationDescriptions & descriptio
     desc.setUnknown();
     descriptions.addDefault(desc);
 }
-
 //define this as a plug-in
 DEFINE_FWK_MODULE(TrackProducer);

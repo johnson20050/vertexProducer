@@ -100,7 +100,9 @@ protected:
     {
         FDSigPreCut_tktkTomumu, Cosa2dPreCut_tktkTomumu, 
         FDSigCut_mumutktkToBS, vtxprobCut, 
+        mMassPreCut_mumu, MMassPreCut_mumu, mMassPreCut_tktk, MMassPreCut_tktk,
         mCandMassCut, MCandMassCut, 
+        ptPreCut_muPos, ptPreCut_muNeg, ptPreCut_tkPos, ptPreCut_tkNeg,
         muPosMass, muNegMass, tkPosMass, tkNegMass, muPosSigma, muNegSigma, tkPosSigma, tkNegSigma,
         mumuMassConstraint, 
         totNumD
@@ -115,6 +117,12 @@ protected:
         totNumS
     };
 
+//    static void clearRecoredSources();
+//    static void recordParingSources( const edm::Event& iEvent, const edm::EventSetup& iSetup );
+//    static reco::VertexCompositeCandidateCollection recordMuMuCands;
+//    static reco::VertexCompositeCandidateCollection recordTkTkCands;
+//    static bool recorded;
+
 
 public:
     // Helper method that does the actual fitting using the KalmanVertexFitter
@@ -125,9 +133,11 @@ public:
     void clearAndInitializeContainer();
 
 
+
     double FDSig(const reco::VertexCompositeCandidate& cand1, const reco::VertexCompositeCandidate& cand2);
     double FDSig(const reco::VertexCompositeCandidate&  cand1, const reco::BeamSpot& bSpot);
     double Cosa2d( const reco::VertexCompositeCandidate& cand1, const reco::VertexCompositeCandidate& cand2 );
 };
+
 
 #endif

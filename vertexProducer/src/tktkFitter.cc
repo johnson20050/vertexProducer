@@ -38,6 +38,8 @@
 #include <memory>
 
 
+const double piMass = 0.13957018;
+const double piMassSq = piMass*piMass;
 // Constructor and (empty) destructor
 tktkFitter::tktkFitter(const edm::ParameterSet & theParameters,
                        edm::ConsumesCollector&& iC )
@@ -243,8 +245,13 @@ void tktkFitter::fitAll(const edm::Event & iEvent, const edm::EventSetup & iSetu
             if (!posTSCP.isValid() || !negTSCP.isValid())
                 continue;
 
+            double totalE = sqrt( posTSCP.momentum().mag2() + piMassSq )+
+                            sqrt( negTSCP.momentum().mag2() + piMassSq );
+            double totalESq = totalE * totalE;
+            double totalPSq = (posTSCP.momentum() + negTSCP.momentum()).mag2();
+            double mass = sqrt( totalESq-totalPSq );
+            if ( mass > 0.6 ) continue;
 
-            // Create the vertex fitter object and vertex the tracks
             TransientVertex theRecoVertex;
             if (vtxFitter == "KalmanVertexFitter")
             {

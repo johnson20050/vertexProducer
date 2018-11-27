@@ -1,4 +1,4 @@
-#include "vertexProducer/vertexProducer/interface/fourTracksFittingMethod1.h"
+#include "vertexProducer/vertexProducer/interface/fourTracksFittingMethod2.h"
 
 #include "CommonTools/CandUtils/interface/AddFourMomenta.h"
 #include "DataFormats/Candidate/interface/VertexCompositeCandidate.h"
@@ -14,7 +14,7 @@
 #include "TMath.h"
 
 // Method containing the algorithm for vertex reconstruction
-void fourTracksFittingMethod1::fitAll(const edm::Event & iEvent, const edm::EventSetup & iSetup)
+void fourTracksFittingMethod2::fitAll(const edm::Event & iEvent, const edm::EventSetup & iSetup)
 {
     clearAndInitializeContainer();
 
@@ -44,31 +44,28 @@ void fourTracksFittingMethod1::fitAll(const edm::Event & iEvent, const edm::Even
     iSetup.get < GlobalTrackingGeometryRecord > ().get(globTkGeomHandle);
     magField = bFieldHandle.product();
 
-    //std::cout << "method1 01\n";
     // load mumuCandidate & tktkCandidate to do the vertexing
     for ( const VertexCompositeCandidate& mumuCand : *(theMuMuPairHandle.product()) )
-  //for ( int mumuIdx = 0; mumuIdx < recordMuMuCands.size(); ++mumuIdx )
+    //for ( int mumuIdx = 0; mumuIdx < mumuCands.size(); ++mumuIdx )
     {
-    //std::cout << "method1. 01.2\n";
-        //const VertexCompositeCandidate& mumuCand = recordMuMuCands[mumuIdx];
+        //const VertexCompositeCandidate& mumuCand = mumuCands[mumuIdx];
         const reco::RecoChargedCandidate* muPosCandPtr = dynamic_cast<const reco::RecoChargedCandidate*>( mumuCand.daughter(optS[muPosName]) );
         const reco::RecoChargedCandidate* muNegCandPtr = dynamic_cast<const reco::RecoChargedCandidate*>( mumuCand.daughter(optS[muNegName]) );
         
         
-    //std::cout << "method1. 01.3\n";
         for ( const VertexCompositeCandidate& tktkCand : *(theTkTkPairHandle.product()) )
-      //for ( int tktkIdx = 0; tktkIdx < recordTkTkCands.size(); ++tktkIdx )
+        //for ( int tktkIdx = 0; tktkIdx < tktkCands.size(); ++tktkIdx )
         {
-    //std::cout << "method1. 01.42\n";
-            //const reco::VertexCompositeCandidate& tktkCand = recordTkTkCands[tktkIdx];
+            //const reco::VertexCompositeCandidate& tktkCand = tktkCands[tktkIdx];
             const reco::RecoChargedCandidate* tkPosCandPtr = dynamic_cast<const reco::RecoChargedCandidate*>( tktkCand.daughter(optS[tkPosName]) );
             const reco::RecoChargedCandidate* tkNegCandPtr = dynamic_cast<const reco::RecoChargedCandidate*>( tktkCand.daughter(optS[tkNegName]) );
 
-    //std::cout << "method1. 01.43\n";
             // preselections
-            // fd need to smaller than N sigma.
+            double cosa2d = Cosa2d( tktkCand, mumuCand );
+            if ( cosa2d < optD[Cosa2dPreCut_tktkTomumu] ) continue;
+            // fd need to biggerr than N sigma.
             double fdSig = FDSig( tktkCand, mumuCand );
-            if ( fdSig > optD[FDSigPreCut_tktkTomumu] ) continue;
+            if ( fdSig < optD[FDSigPreCut_tktkTomumu] ) continue;
             // pt need to bigger than N GeV
             if ( muPosCandPtr->pt() < optD[ptPreCut_muPos] ) continue;
             if ( muNegCandPtr->pt() < optD[ptPreCut_muNeg] ) continue;
@@ -81,7 +78,6 @@ void fourTracksFittingMethod1::fitAll(const edm::Event & iEvent, const edm::Even
             if ( tktkCand.mass() < optD[mMassPreCut_tktk] ) continue;
             if ( tktkCand.mass() > optD[MMassPreCut_tktk] ) continue;
 
-        //std::cout << "method1. 01.44\n";
 
 
             // build trackRef & TransientTracks
@@ -105,7 +101,6 @@ void fourTracksFittingMethod1::fitAll(const edm::Event & iEvent, const edm::Even
             //printf("muPos : %f , muNeg : %f , tkPos : %f , tkNeg : %f \n", mpMom.mag(), mnMom.mag(), tpMom.mag(), tnMom.mag() );
             if ( fabs(mpMom.mag()-tpMom.mag()) < 0.001 ) continue;
             if ( fabs(mnMom.mag()-tnMom.mag()) < 0.001 ) continue;
-    //std::cout << "method1. 01.45\n";
 
             KinematicParticleFactoryFromTransientTrack pFactory;
             std::vector<RefCountedKinematicParticle> mumutktkCand;
@@ -114,17 +109,32 @@ void fourTracksFittingMethod1::fitAll(const edm::Event & iEvent, const edm::Even
             float m2sig = optD[muNegSigma];
             float m3sig = optD[tkPosSigma];
             float m4sig = optD[tkNegSigma];
+
+            // create virtual particle
+            std::vector<RefCountedKinematicParticle> tktkTmpCand;
+            tktkTmpCand.push_back(pFactory.particle( tkPosTransTk, optD[tkPosMass], 0., 0., m3sig) );
+            tktkTmpCand.push_back(pFactory.particle( tkNegTransTk, optD[tkNegMass], 0., 0., m4sig) );
+            KinematicParticleVertexFitter tktkTmpFitter;
+            RefCountedKinematicTree       tktkTmpKineTree;
+            tktkTmpKineTree = tktkTmpFitter.fit( tktkTmpCand );
+            if ( !tktkTmpKineTree->isValid() ) continue;
+            RefCountedKinematicParticle tktkTmpKineParticle = tktkTmpKineTree->currentParticle();
+            RefCountedKinematicVertex   tktkTmpKineVertex   = tktkTmpKineTree->currentDecayVertex();
+            VirtualKinematicParticleFactory vFactory;
+            float tktkTmpChi2 = tktkTmpKineVertex->chiSquared();
+            float tktkTmpNdof = tktkTmpKineVertex->degreesOfFreedom();
+
+
             mumutktkCand.push_back( pFactory.particle(muPosTransTk,optD[muPosMass], 0., 0., m1sig) );
             mumutktkCand.push_back( pFactory.particle(muNegTransTk,optD[muNegMass], 0., 0., m2sig) );
-            mumutktkCand.push_back( pFactory.particle(tkPosTransTk,optD[tkPosMass], 0., 0., m3sig) );
-            mumutktkCand.push_back( pFactory.particle(tkNegTransTk,optD[tkNegMass], 0., 0., m4sig) );
+            mumutktkCand.push_back( vFactory.particle(tktkTmpKineParticle->currentState(), tktkTmpChi2, tktkTmpNdof, tktkTmpKineParticle) );
 
             RefCountedKinematicTree fourTracksKineTree;
             if ( optD[mumuMassConstraint] > 0. )
             {
                 MultiTrackKinematicConstraint* mumuConstr = new TwoTrackMassKinematicConstraint( optD[mumuMassConstraint] );
                 KinematicConstrainedVertexFitter kcvFitter;
-                fourTracksKineTree = kcvFitter.fit( mumutktkCand, mumuConstr, &mumuVTX );
+                fourTracksKineTree = kcvFitter.fit( mumutktkCand, mumuConstr );
             }
             else
             {
@@ -133,7 +143,6 @@ void fourTracksFittingMethod1::fitAll(const edm::Event & iEvent, const edm::Even
             }
             if ( !fourTracksKineTree->isValid() ) continue;
             fourTracksKineTree->movePointerToTheTop();
-    //std::cout << "method1. 01.46\n";
 
             // start to fill in result.
             RefCountedKinematicParticle candKineParticle = fourTracksKineTree->currentParticle();
@@ -159,7 +168,6 @@ void fourTracksFittingMethod1::fitAll(const edm::Event & iEvent, const edm::Even
             if ( FDSig( *fourTkCand, *theBeamSpotHandle.product() ) < optD[FDSigCut_mumutktkToBS] )
             { delete fourTkCand; continue; }
 
-    //std::cout << "method1. 01.47\n";
 
             // start to get daughter information.
             fourTracksKineTree->movePointerToTheTop();
@@ -182,29 +190,18 @@ void fourTracksFittingMethod1::fitAll(const edm::Event & iEvent, const edm::Even
             nMuCand.setTrack( muNegTkRef );
 
             fourTracksKineTree->movePointerToTheNextChild();
-            RefCountedKinematicParticle pTkMomRefitted = fourTracksKineTree->currentParticle();
-            reco::RecoChargedCandidate pTkCand( 1, reco::Particle::LorentzVector(
-                        pTkMomRefitted->currentState().kinematicParameters().momentum().x(),
-                        pTkMomRefitted->currentState().kinematicParameters().momentum().y(),
-                        pTkMomRefitted->currentState().kinematicParameters().momentum().z(),
-                        pTkMomRefitted->currentState().kinematicParameters().energy() ), vtx );
-            pTkCand.setTrack( tkPosTkRef );
-
-            fourTracksKineTree->movePointerToTheNextChild();
-            RefCountedKinematicParticle nTkMomRefitted = fourTracksKineTree->currentParticle();
-            reco::RecoChargedCandidate nTkCand(-1, reco::Particle::LorentzVector(
-                        nTkMomRefitted->currentState().kinematicParameters().momentum().x(),
-                        nTkMomRefitted->currentState().kinematicParameters().momentum().y(),
-                        nTkMomRefitted->currentState().kinematicParameters().momentum().z(),
-                        nTkMomRefitted->currentState().kinematicParameters().energy() ), vtx );
-            nTkCand.setTrack( tkNegTkRef );
+            RefCountedKinematicParticle TkTkMomRefitted = fourTracksKineTree->currentParticle();
+            reco::RecoChargedCandidate TkTkCand( 0, reco::Particle::LorentzVector(
+                        TkTkMomRefitted->currentState().kinematicParameters().momentum().x(),
+                        TkTkMomRefitted->currentState().kinematicParameters().momentum().y(),
+                        TkTkMomRefitted->currentState().kinematicParameters().momentum().z(),
+                        TkTkMomRefitted->currentState().kinematicParameters().energy() ), vtx );
 
             AddFourMomenta addp4;
 
             fourTkCand->addDaughter( pMuCand, optS[muPosName] );
             fourTkCand->addDaughter( nMuCand, optS[muNegName] );
-            fourTkCand->addDaughter( pTkCand, optS[tkPosName] );
-            fourTkCand->addDaughter( nTkCand, optS[tkNegName] );
+            fourTkCand->addDaughter( TkTkCand,"Lam0" );
             fourTkCand->setPdgId(5122);
             addp4.set(*fourTkCand);
 
@@ -216,7 +213,6 @@ void fourTracksFittingMethod1::fitAll(const edm::Event & iEvent, const edm::Even
                 enlargeContainer();
             delete fourTkCand;
             fourTkCand = nullptr;
-    //std::cout << "method1. 01.48\n";
         } // tktkPair loop end
     } // mumuPair loop end
 
