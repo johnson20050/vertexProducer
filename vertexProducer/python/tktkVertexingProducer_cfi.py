@@ -39,49 +39,60 @@ tktkVertexingProducer = cms.EDProducer("tktkVertexingProducer",
     # set two tks information
     recoOptions = cms.VPSet(
         cms.PSet(
-            pTkName = cms.string('Proton'),
-            nTkName = cms.string('Kaon'),
-            candName = cms.string('TkTk'),
-            pTkMass = cms.double(0.938272046),
-            nTkMass = cms.double(0.493667),
-            tktkMass = cms.double(-1.),
-            tktkMassCut = cms.double(3.5),
-            #   Radial vertex significance >
-            vtxSignificance2DCut = cms.double(2.9),
-            ),
-        cms.PSet(
-            pTkName = cms.string('Kaon'),
-            nTkName = cms.string('Proton'),
-            candName = cms.string('tktk'),
-            pTkMass = cms.double(0.493667),
-            nTkMass = cms.double(0.938272046),
-            tktkMass = cms.double(-1.),
-            tktkMassCut = cms.double(3.5),
-            #   Radial vertex significance >
-            vtxSignificance2DCut = cms.double(2.9),
-            ),
-        cms.PSet(
-            pTkName = cms.string('Proton'),
-            nTkName = cms.string('Pion'),
-            candName = cms.string('Lam0'),
-            pTkMass = cms.double(0.938272046),
-            nTkMass = cms.double(0.13957018),
-            tktkMass = cms.double(1.115683),
-            tktkMassCut = cms.double(0.5),
-            #   Radial vertex significance >
-            vtxSignificance2DCut = cms.double(15.),
-            ),
-        cms.PSet(
-            pTkName = cms.string('Pion'),
-            nTkName = cms.string('Proton'),
-            candName = cms.string('Lamo'),
+            pTkName = cms.string('PiPos'),
+            nTkName = cms.string('PiNeg'),
+            candName = cms.string('generalTkPair'),
             pTkMass = cms.double(0.13957018),
-            nTkMass = cms.double(0.938272046),
-            tktkMass = cms.double(1.115683),
-            tktkMassCut = cms.double(0.5),
+            nTkMass = cms.double(0.13957018),
+            tktkMass = cms.double(-1.),
+            tktkMassCut = cms.double(3.5),
             #   Radial vertex significance >
-            vtxSignificance2DCut = cms.double(15.),
+            vtxSignificance2DCut = cms.double(2.9),
             ),
+        #  cms.PSet(
+        #      pTkName = cms.string('Proton'),
+        #      nTkName = cms.string('Kaon'),
+        #      candName = cms.string('TkTk'),
+        #      pTkMass = cms.double(0.938272046),
+        #      nTkMass = cms.double(0.493667),
+        #      tktkMass = cms.double(-1.),
+        #      tktkMassCut = cms.double(3.5),
+        #      #   Radial vertex significance >
+        #      vtxSignificance2DCut = cms.double(2.9),
+        #      ),
+        #  cms.PSet(
+        #      pTkName = cms.string('Kaon'),
+        #      nTkName = cms.string('Proton'),
+        #      candName = cms.string('tktk'),
+        #      pTkMass = cms.double(0.493667),
+        #      nTkMass = cms.double(0.938272046),
+        #      tktkMass = cms.double(-1.),
+        #      tktkMassCut = cms.double(3.5),
+        #      #   Radial vertex significance >
+        #      vtxSignificance2DCut = cms.double(2.9),
+        #      ),
+        #  cms.PSet(
+        #      pTkName = cms.string('Proton'),
+        #      nTkName = cms.string('Pion'),
+        #      candName = cms.string('Lam0'),
+        #      pTkMass = cms.double(0.938272046),
+        #      nTkMass = cms.double(0.13957018),
+        #      tktkMass = cms.double(1.115683),
+        #      tktkMassCut = cms.double(0.5),
+        #      #   Radial vertex significance >
+        #      vtxSignificance2DCut = cms.double(15.),
+        #      ),
+        #  cms.PSet(
+        #      pTkName = cms.string('Pion'),
+        #      nTkName = cms.string('Proton'),
+        #      candName = cms.string('Lamo'),
+        #      pTkMass = cms.double(0.13957018),
+        #      nTkMass = cms.double(0.938272046),
+        #      tktkMass = cms.double(1.115683),
+        #      tktkMassCut = cms.double(0.5),
+        #      #   Radial vertex significance >
+        #      vtxSignificance2DCut = cms.double(15.),
+        #      ),
         ),
 )
 

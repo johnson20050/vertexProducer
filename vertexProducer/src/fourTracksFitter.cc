@@ -46,9 +46,6 @@ fourTracksFitter::fourTracksFitter(const edm::ParameterSet & theParameters,
     tktkCands(nullptr), tmpContainerToTkTkCands(nullptr), nCandsSize(0), tmpContainerSize(100)
 {
     using std::string;
-    beamspotToken = iC.consumes<reco::BeamSpot>( theParameters.getParameter<edm::InputTag>("beamspotLabel") );
-    tktkPairToken = iC.consumes<reco::VertexCompositeCandidateCollection>( theParameters.getParameter<edm::InputTag>("tktkCandLabel") );
-    mumuPairToken = iC.consumes<reco::VertexCompositeCandidateCollection>( theParameters.getParameter<edm::InputTag>("mumuCandLabel") );
 
 
     // ------> Initialize parameters from PSet. ALL TRACKED, so no defaults.
@@ -62,6 +59,9 @@ fourTracksFitter::fourTracksFitter(const edm::ParameterSet & theParameters,
     optS = new std::string[totNumS];
 
     optS[candName]   = theParameters.getParameter < string > (string("candName"));
+    optS[tktkName]   = theParameters.getParameter < string > (string("tktkName"));
+    optS[mumuName]   = theParameters.getParameter < string > (string("mumuName"));
+
     optS[muPosName]  = theParameters.getParameter < string > (string("muPosName"));
     optS[muNegName]  = theParameters.getParameter < string > (string("muNegName"));
     optS[tkPosName]  = theParameters.getParameter < string > (string("tkPosName"));
@@ -210,51 +210,58 @@ double fourTracksFitter::Cosa2d( const reco::VertexCompositeCandidate& cand1, co
     return posVec.dot(momVec) / posVec.mag() / momVec.mag();
 }
 
-//void fourTracksFitter::recordParingSources(const edm::Event & iEvent, const edm::EventSetup & iSetup)
-//{
-//    if ( recorded ) return;
-//    // Handles for tracks, B-field, and tracker geometry
-//    edm::Handle < reco::VertexCompositeCandidateCollection > theMuMuPairHandle;
-//    edm::Handle < reco::VertexCompositeCandidateCollection > theTkTkPairHandle;
-//
-//    iEvent.getByToken(mumuPairToken, theMuMuPairHandle);
-//    iEvent.getByToken(tktkPairToken, theTkTkPairHandle);
-//    if (!theTkTkPairHandle.isValid()) return;
-//    if (!theMuMuPairHandle.isValid()) return;
-//    if (!theMuMuPairHandle->size()) return;
-//    if (!theTkTkPairHandle->size()) return;
-//    recordMuMuCands.reserve( theMuMuPairHandle->size() );
-//    recordTkTkCands.reserve( theTkTkPairHandle->size() );
-//
-//    // load mumuCandidate & tktkCandidate to do the vertexing
-//    for ( const VertexCompositeCandidate& mumuCand : *(theMuMuPairHandle.product()) )
-//    {
-//        const reco::RecoChargedCandidate* muPosCandPtr = dynamic_cast<const reco::RecoChargedCandidate*>( mumuCand.daughter(optS[muPosName]) );
-//        const reco::RecoChargedCandidate* muNegCandPtr = dynamic_cast<const reco::RecoChargedCandidate*>( mumuCand.daughter(optS[muNegName]) );
-//        recordMuMuCands.emplace_back(mumuCand);
-//
-//    }
-//        
-//    for ( const VertexCompositeCandidate& tktkCand : *(theTkTkPairHandle.product()) )
-//    {
-//        const reco::RecoChargedCandidate* tkPosCandPtr = dynamic_cast<const reco::RecoChargedCandidate*>( tktkCand.daughter(optS[tkPosName]) );
-//        const reco::RecoChargedCandidate* tkNegCandPtr = dynamic_cast<const reco::RecoChargedCandidate*>( tktkCand.daughter(optS[tkNegName]) );
-//        recordTkTkCands.emplace_back(tktkCand);
-//    }
-//
-//    recorded = true;
-//    return;
-//}
-//
-//void clearRecoredSources()
-//{
-//    recordMuMuCands.clear();
-//    recordTkTkCands.clear();
-//    recorded = false;
-//    return;
-//}
-//
-//
-//fourTracksFitter::recorded = false;
-//fourTracksFitter::recordMuMuCands;
-//fourTracksFitter::recordTkTkCands;
+void fourTracksFitter::recordParingSources(const edm::Event & iEvent, const edm::EventSetup & iSetup)
+{
+    if ( recorded ) return;
+
+    iEvent.getByToken(mumuPairToken, *(theMuMuPairHandlePtr.get()));
+    iEvent.getByToken(tktkPairToken, *(theTkTkPairHandlePtr.get()));
+    iSetup.get < IdealMagneticFieldRecord > ().get(*(bFieldHandlePtr.get()));
+    iSetup.get < GlobalTrackingGeometryRecord > ().get(*(globTkGeomHandlePtr.get()));
+    if (!(*theTkTkPairHandlePtr).isValid()) return;
+    if (!(*theMuMuPairHandlePtr).isValid()) return;
+    if (!(*theMuMuPairHandlePtr)->size()) return;
+    if (!(*theTkTkPairHandlePtr)->size()) return;
+
+    recorded = true;
+    return;
+}
+
+void fourTracksFitter::clearRecoredSources()
+{
+    recorded = false;
+    theBeamSpotHandlePtr.release();
+    theMuMuPairHandlePtr.release();
+    theTkTkPairHandlePtr.release();
+    globTkGeomHandlePtr.release();
+    bFieldHandlePtr.release();
+    theBeamSpotHandlePtr.reset(new edm::Handle<reco::BeamSpot >());
+    theMuMuPairHandlePtr.reset(new edm::Handle<reco::VertexCompositeCandidateCollection>());
+    theTkTkPairHandlePtr.reset(new edm::Handle<reco::VertexCompositeCandidateCollection>());
+    globTkGeomHandlePtr.reset(new edm::ESHandle<GlobalTrackingGeometry>());
+    bFieldHandlePtr.reset(new edm::ESHandle<MagneticField>());
+    return;
+}
+
+void fourTracksFitter::initializeEvent( const edm::ParameterSet& theParameters, edm::ConsumesCollector&& iC )
+{
+    beamspotToken = iC.consumes<reco::BeamSpot>( theParameters.getParameter<edm::InputTag>("beamspotLabel") );
+    tktkPairToken = iC.consumes<reco::VertexCompositeCandidateCollection>( theParameters.getParameter<edm::InputTag>("tktkCandLabel") );
+    mumuPairToken = iC.consumes<reco::VertexCompositeCandidateCollection>( theParameters.getParameter<edm::InputTag>("mumuCandLabel") );
+    return;
+}
+void fourTracksFitter::clearEvent()
+{
+    return;
+}
+
+bool fourTracksFitter::recorded = false;
+// Handles for tracks, B-field, and tracker geometry
+std::unique_ptr<edm::Handle<reco::BeamSpot                          >> fourTracksFitter::theBeamSpotHandlePtr;
+std::unique_ptr<edm::Handle<reco::VertexCompositeCandidateCollection>> fourTracksFitter::theMuMuPairHandlePtr;
+std::unique_ptr<edm::Handle<reco::VertexCompositeCandidateCollection>> fourTracksFitter::theTkTkPairHandlePtr;
+std::unique_ptr<edm::ESHandle<GlobalTrackingGeometry>                > fourTracksFitter::globTkGeomHandlePtr;
+std::unique_ptr<edm::ESHandle<MagneticField>                         > fourTracksFitter::bFieldHandlePtr;
+edm::EDGetTokenT< reco::VertexCompositeCandidateCollection > fourTracksFitter::mumuPairToken;
+edm::EDGetTokenT< reco::VertexCompositeCandidateCollection > fourTracksFitter::tktkPairToken;
+edm::EDGetTokenT< reco::BeamSpot                           > fourTracksFitter::beamspotToken;

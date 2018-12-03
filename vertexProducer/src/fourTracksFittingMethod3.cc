@@ -1,4 +1,4 @@
-#include "vertexProducer/vertexProducer/interface/fourTracksFittingMethod2.h"
+#include "vertexProducer/vertexProducer/interface/fourTracksFittingMethod3.h"
 
 #include "CommonTools/CandUtils/interface/AddFourMomenta.h"
 #include "DataFormats/Candidate/interface/VertexCompositeCandidate.h"
@@ -14,7 +14,7 @@
 #include "TMath.h"
 
 // Method containing the algorithm for vertex reconstruction
-void fourTracksFittingMethod2::fitAll(const edm::Event & iEvent, const edm::EventSetup & iSetup)
+void fourTracksFittingMethod3::fitAll(const edm::Event & iEvent, const edm::EventSetup & iSetup)
 {
     clearAndInitializeContainer();
     if ( !recorded ) return;
@@ -149,85 +149,87 @@ void fourTracksFittingMethod2::fitAll(const edm::Event & iEvent, const edm::Even
 
             reco::VertexCompositeCandidate* fourTkCand =
                 new reco::VertexCompositeCandidate(0, candP4, vtx, vtxCov, vtxChi2, vtxNdof);
-
+            std::shared_ptr < TrajectoryStateClosestToPoint > muPosTraj;
+            std::shared_ptr < TrajectoryStateClosestToPoint > muNegTraj;
+            std::shared_ptr < TrajectoryStateClosestToPoint > tkPosTraj;
+            std::shared_ptr < TrajectoryStateClosestToPoint > tkNegTraj;
 
             // start to get daughter information.
+            // start to record mu+
             fourTracksKineTree->movePointerToTheTop();
             fourTracksKineTree->movePointerToTheFirstChild();
-            RefCountedKinematicParticle pMuMomRefitted = fourTracksKineTree->currentParticle();
-            // testing
             RefCountedKinematicVertex   pMuKineVertex   = fourTracksKineTree->currentDecayVertex();
             reco::Vertex pMuVtx = *(pMuKineVertex.get());
             const reco::Vertex::CovarianceMatrix pMuVtxCov(pMuVtx.covariance());
-            // tested
-            reco::RecoChargedCandidate pMuCand( 1, reco::Particle::LorentzVector(
-                        pMuMomRefitted->currentState().kinematicParameters().momentum().x(),
-                        pMuMomRefitted->currentState().kinematicParameters().momentum().y(),
-                        pMuMomRefitted->currentState().kinematicParameters().momentum().z(),
-                        pMuMomRefitted->currentState().kinematicParameters().energy() ), vtx );
+            GlobalPoint pMuVtxPoint( pMuVtx.x(), pMuVtx.y(), pMuVtx.z() );
+            muPosTraj.reset(new TrajectoryStateClosestToPoint(muPosTransTk.trajectoryStateClosestToPoint(pMuVtxPoint)) );
+            if ( muPosTraj.get() == 0 ) { printf("fourTracksFittingMeghod3::fitAll() : muPosTkRef recounting failed\n"); continue; }
+            reco::Particle::LorentzVector pMuMom(
+                    muPosTraj->momentum().x(),muPosTraj->momentum().y(),muPosTraj->momentum().z(),
+                    sqrt(muPosTraj->momentum().mag2() + optD[muPosMass]*optD[muPosMass]) );
+
+            reco::RecoChargedCandidate pMuCand( 1, pMuMom, pMuVtx.position() );
             pMuCand.setTrack( muPosTkRef );
 
+
+            // start to record mu-
             fourTracksKineTree->movePointerToTheNextChild();
-            RefCountedKinematicParticle nMuMomRefitted = fourTracksKineTree->currentParticle();
-            // testing
             RefCountedKinematicVertex   nMuKineVertex   = fourTracksKineTree->currentDecayVertex();
             reco::Vertex nMuVtx = *(nMuKineVertex.get());
             const reco::Vertex::CovarianceMatrix nMuVtxCov(nMuVtx.covariance());
-            // tested
-            reco::RecoChargedCandidate nMuCand(-1, reco::Particle::LorentzVector(
-                        nMuMomRefitted->currentState().kinematicParameters().momentum().x(),
-                        nMuMomRefitted->currentState().kinematicParameters().momentum().y(),
-                        nMuMomRefitted->currentState().kinematicParameters().momentum().z(),
-                        nMuMomRefitted->currentState().kinematicParameters().energy() ), vtx );
+            GlobalPoint nMuVtxPoint( nMuVtx.x(), nMuVtx.y(), nMuVtx.z() );
+            muNegTraj.reset(new TrajectoryStateClosestToPoint(muNegTransTk.trajectoryStateClosestToPoint(nMuVtxPoint)) );
+            if ( muNegTraj.get() == 0 ) { printf("fourTracksFittingMeghod3::fitAll() : muNegTkRef recounting failed\n"); continue; }
+            reco::Particle::LorentzVector nMuMom(
+                    muNegTraj->momentum().x(),muNegTraj->momentum().y(),muNegTraj->momentum().z(),
+                    sqrt(muNegTraj->momentum().mag2() + optD[muNegMass]*optD[muNegMass]) );
+
+            reco::RecoChargedCandidate nMuCand( -1, nMuMom, nMuVtx.position() );
             nMuCand.setTrack( muNegTkRef );
 
+
+            // start to record tktk
             fourTracksKineTree->movePointerToTheNextChild();
-            // testing
             RefCountedKinematicVertex   tktkKineVertex   = fourTracksKineTree->currentDecayVertex();
             reco::Vertex tktkVtx = *(tktkKineVertex.get());
             const reco::Vertex::CovarianceMatrix tktkVtxCov(tktkVtx.covariance());
-            // tested
-            RefCountedKinematicParticle TkTkMomRefitted = fourTracksKineTree->currentParticle();
-            reco::RecoChargedCandidate TkTkCand( 0, reco::Particle::LorentzVector(
-                        TkTkMomRefitted->currentState().kinematicParameters().momentum().x(),
-                        TkTkMomRefitted->currentState().kinematicParameters().momentum().y(),
-                        TkTkMomRefitted->currentState().kinematicParameters().momentum().z(),
-                        TkTkMomRefitted->currentState().kinematicParameters().energy() ), vtx );
+            GlobalPoint tktkVtxPoint( tktkVtx.x(), tktkVtx.y(), tktkVtx.z() );
+            tkPosTraj.reset(new TrajectoryStateClosestToPoint(tkPosTransTk.trajectoryStateClosestToPoint(tktkVtxPoint)) );
+            tkNegTraj.reset(new TrajectoryStateClosestToPoint(tkNegTransTk.trajectoryStateClosestToPoint(tktkVtxPoint)) );
+            if ( tkPosTraj.get() == 0 ) { printf("fourTracksFittingMeghod3::fitAll() : tkPosTkRef recounting failed\n"); continue; }
+            if ( tkNegTraj.get() == 0 ) { printf("fourTracksFittingMeghod3::fitAll() : tkNegTkRef recounting failed\n"); continue; }
+            reco::Particle::LorentzVector pTkMom(
+                    tkPosTraj->momentum().x(),tkPosTraj->momentum().y(),tkPosTraj->momentum().z(),
+                    sqrt(tkPosTraj->momentum().mag2() + optD[tkPosMass]*optD[tkPosMass]) );
+            reco::Particle::LorentzVector nTkMom(
+                    tkNegTraj->momentum().x(),tkNegTraj->momentum().y(),tkNegTraj->momentum().z(),
+                    sqrt(tkNegTraj->momentum().mag2() + optD[tkNegMass]*optD[tkNegMass]) );
+
+            reco::RecoChargedCandidate pTkCand( 1, pTkMom, tktkVtx.position() );
+            reco::RecoChargedCandidate nTkCand(-1, nTkMom, tktkVtx.position() );
+            pTkCand.setTrack( tkPosTkRef );
+            nTkCand.setTrack( tkNegTkRef );
+
 
             AddFourMomenta addp4;
 
-            fourTkCand->addDaughter( pMuCand, optS[muPosName] );
-            fourTkCand->addDaughter( nMuCand, optS[muNegName] );
+            // for check
+            reco::VertexCompositeCandidate MuMuCand( 0, pMuMom+nMuMom, pMuVtx.position(), pMuVtxCov, pMuKineVertex->chiSquared(), pMuKineVertex->degreesOfFreedom() );
+            MuMuCand.addDaughter( pMuCand, optS[muPosName] );
+            MuMuCand.addDaughter( nMuCand, optS[muNegName] );
+            addp4.set(MuMuCand);
+            
+            reco::VertexCompositeCandidate TkTkCand( 0, pTkMom+nTkMom, tktkVtx.position(), tktkVtxCov, tktkKineVertex->chiSquared(), tktkKineVertex->degreesOfFreedom() );
+            TkTkCand.addDaughter( pTkCand, optS[tkPosName] );
+            TkTkCand.addDaughter( nTkCand, optS[tkNegName] );
+            //if ( fourTkCand->mass() != candP4.mag() ) std::cout << "fourTracksFittingMeghod3::fitAll() : warning : final mumutktk refit mass is not the same as component sum\n";
+
+
+            fourTkCand->addDaughter( MuMuCand,optS[mumuName] );
             fourTkCand->addDaughter( TkTkCand,optS[tktkName] );
             fourTkCand->setPdgId(5122);
             addp4.set(*fourTkCand);
-
-
-//            // testing
-//    typedef ROOT::Math::SMatrix< double, 3, 3, ROOT::Math::MatRepSym<double,3> > SMatrixSym3D;
-//    typedef ROOT::Math::SVector< double, 3 > SVector3;
-//            SMatrixSym3D mumuCOV = pMuVtxCov + nMuVtxCov;
-//            SMatrixSym3D mutkCOV = pMuVtxCov + tktkVtxCov;
-//            SMatrixSym3D tktkCOV = tktkVtxCov+ tktkCand.vertexCovariance();
-//            SVector3 mumuFDvector( pMuVtx.x() - nMuVtx.x(), pMuVtx.y() - nMuVtx.y(), 0. ); 
-//            SVector3 mutkFDvector( pMuVtx.x() -tktkVtx.x(),pMuVtx.y() -tktkVtx.y(), 0. );
-//            SVector3 tktkFDvector( tktkVTX.x()-tktkVtx.x(),tktkVTX.y()-tktkVtx.y(), 0. );
-//            double mumuFDmag = ROOT::Math::Mag( mumuFDvector );
-//            double mutkFDmag = ROOT::Math::Mag( mutkFDvector );
-//            double tktkFDmag = ROOT::Math::Mag( tktkFDvector );
-//            double mumuFDerr = sqrt( ROOT::Math::Similarity(mumuCOV, mumuFDvector) ) / mumuFDmag;
-//            double mutkFDerr = sqrt( ROOT::Math::Similarity(mutkCOV, mutkFDvector) ) / mutkFDmag;
-//            double tktkFDerr = sqrt( ROOT::Math::Similarity(tktkCOV, tktkFDvector) ) / tktkFDmag;
-//
-//            double mumuFDSig = mumuFDmag / mumuFDerr;
-//            double mutkFDSig = mutkFDmag / mutkFDerr;
-//            double tktkFDSig = tktkFDmag / tktkFDerr;
-//            std::cout << "--------fourTracksFitter2::fitAll() : ";
-//            if ( mumuFDSig > 0.5 ) printf(" ---- mu mu is NOT at the same vertex %.4f ---- ", mumuFDSig );
-//            if ( mutkFDSig < 5.  ) printf(" ---- jpsi Lambda0 IS at the same vertex %.4f ---- ", mutkFDSig );
-//            if ( tktkFDSig > 0.5 ) printf(" ---- tktk Lambda0 is NOT at the same vertex %.4f ---- ", tktkFDSig );
-//            std::cout << std::endl;
-//            // tested
+            if ( fourTkCand->mass() != candP4.mag() ) std::cout << "fourTracksFittingMeghod3::fitAll() : warning : final mumutktk refit mass is not the same as component sum\n";
 
 
             if ( fourTkCand->mass() > optD[mCandMassCut] &&
@@ -243,5 +245,4 @@ void fourTracksFittingMethod2::fitAll(const edm::Event & iEvent, const edm::Even
     fillInContainer();
     return;
 }
-
 

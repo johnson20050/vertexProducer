@@ -1,12 +1,14 @@
 // -*- C++ -*-
 //
 // modified from V0Fitter. It is a cmssw code used in RECO and AOD. To find mumutktk combinations.
-// It is fitting method 1 for vertexing.
-// This candidate is composed by mu + mu + tk + tk. with a constrain mumu with J/psi mass.
+// It is fitting method 2 for vertexing.
+// This candidate is composed by mu + mu + TmpCand. with a constrain mumu with J/psi mass.
+// TmpCand is composed by tk + tk.
 // If constrain mass is smaller than 0. the constrain is disabled.
-//
+// 
 // ############################## NOTICE #########################################################
-// The preselection is tktk - mumu vertex position need to SMALLER than n_1 sigma.
+// The preselection is tktk - mumu vertex position need to LARGER than n_1 sigma.
+//          cosa2d from mumu to tktk LARGER than n_2.
 // ############################## NOTICE #########################################################
 //
 //
@@ -29,17 +31,17 @@
 //
 //
 
-#ifndef __fourTracksFittingMethod1_H__
-#define __fourTracksFittingMethod1_H__
+#ifndef __fourTracksFittingMethod3_H__
+#define __fourTracksFittingMethod3_H__
 
 #include "vertexProducer/vertexProducer/interface/fourTracksFitter.h"
 
-class fourTracksFittingMethod1 : public fourTracksFitter
+class fourTracksFittingMethod3 : public fourTracksFitter
 {
 public:
-    fourTracksFittingMethod1(const edm::ParameterSet& theParams,
+    fourTracksFittingMethod3(const edm::ParameterSet& theParams,
                 edm::ConsumesCollector&& iC ): fourTracksFitter(theParams, std::move(iC)) {}
-    virtual ~fourTracksFittingMethod1() {};
+    virtual ~fourTracksFittingMethod3() {};
     virtual void fitAll(const edm::Event& iEvent, const edm::EventSetup& iSetup);
 
 };

@@ -25,6 +25,7 @@
 #include "vertexProducer/vertexProducer/plugins/fourTracksFromVCCProducer.h"
 #include "vertexProducer/vertexProducer/interface/fourTracksFittingMethod1.h"
 #include "vertexProducer/vertexProducer/interface/fourTracksFittingMethod2.h"
+#include "vertexProducer/vertexProducer/interface/fourTracksFittingMethod3.h"
 
 // Constructor
 fourTracksFromVCCProducer::fourTracksFromVCCProducer(const edm::ParameterSet& iConfig)
@@ -33,6 +34,7 @@ fourTracksFromVCCProducer::fourTracksFromVCCProducer(const edm::ParameterSet& iC
     const std::vector< edm::ParameterSet >& subConfigs
         = iConfig.getParameter < std::vector < edm::ParameterSet >> ("recoOptions");
     myFitter.reserve( subConfigs.size() );
+    fourTracksFitter::initializeEvent( iConfig, consumesCollector() );
     for ( const auto& subConfig : subConfigs )
     {
         produces< reco::VertexCompositeCandidateCollection >( subConfig.getParameter<std::string>("candName").c_str());
@@ -42,7 +44,10 @@ fourTracksFromVCCProducer::fourTracksFromVCCProducer(const edm::ParameterSet& iC
                 myFitter.push_back( new fourTracksFittingMethod1(subConfig, consumesCollector()) ); break;
             case 2:
                 myFitter.push_back( new fourTracksFittingMethod2(subConfig, consumesCollector()) ); break;
+            case 3:
+                myFitter .push_back( new fourTracksFittingMethod3(subConfig, consumesCollector()) ); break;
             default:
+                break;
                 printf("fourTracksFromVCCProducer::Constructor() : fitting method number not allowed!\n");
         }
     }
@@ -66,18 +71,14 @@ fourTracksFromVCCProducer::~fourTracksFromVCCProducer()
 void fourTracksFromVCCProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
     using namespace edm;
-    //std::cout << "00001\n";
 
-    //fourTracksFitter::clearRecoredSources();
-    //fourTracksFitter::recordParingSources( iEvent, iSetup );
+    fourTracksFitter::clearRecoredSources();
+    fourTracksFitter::recordParingSources( iEvent, iSetup );
     // Create V0Fitter object which reconstructs the vertices and creates
     for ( const auto& fitter : myFitter )
     {
-    //std::cout << "00002.0\n";
         fitter->fitAll( iEvent, iSetup );
-    //std::cout << "00002.1\n";
     }
-    //std::cout << "00003\n";
 
     for ( const auto& fittingRes : myFitter )
     {
@@ -91,15 +92,15 @@ void fourTracksFromVCCProducer::produce(edm::Event& iEvent, const edm::EventSetu
             continue;
         }
         const reco::VertexCompositeCandidateCollection& fourTksCandCollection = fittingRes->getFourTkCands();
-        //  std::cout << "hii there are " << fourTksCandCollection.size() << " candidates found\n";
         fourTksCandList->reserve( fourTksCandCollection.size() );
         std::copy( fourTksCandCollection.begin(), fourTksCandCollection.end(), std::back_inserter(*fourTksCandList) );
 
         // Write the collections to the Event
         iEvent.put( std::move(fourTksCandList), fittingRes->getFourTkCandName() );
     }
-    //std::cout << "00004 end\n";
 
+
+    fourTracksFitter::clearEvent();
     return;
 }
 
@@ -116,14 +117,17 @@ void fourTracksFromVCCProducer::endJob()
 void fourTracksFromVCCProducer::fillDescriptions( edm::ConfigurationDescriptions& descriptions )
 {
     edm::ParameterSetDescription desc;
+    desc.add<edm::InputTag>("beamspotLabel", edm::InputTag(""));
+    desc.add<edm::InputTag>("tktkCandLabel", edm::InputTag(""));
+    desc.add<edm::InputTag>("mumuCandLabel", edm::InputTag(""));
 
     edm::ParameterSetDescription dpar;
     dpar.add<int>( "fittingMethod", 0 );
-    dpar.add<edm::InputTag>("beamspotLabel", edm::InputTag(""));
-    dpar.add<edm::InputTag>("tktkCandLabel", edm::InputTag(""));
-    dpar.add<edm::InputTag>("mumuCandLabel", edm::InputTag(""));
 
     dpar.add<std::string>("candName", "");
+    dpar.add<std::string>("mumuName", "");
+    dpar.add<std::string>("tktkName", "");
+
     dpar.add<std::string>("muPosName","");
     dpar.add<std::string>("muNegName","");
     dpar.add<std::string>("tkPosName","");

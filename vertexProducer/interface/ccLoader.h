@@ -1,23 +1,9 @@
-// -*- C++ -*-
-//
-// modified from V0Fitter. It is a cmssw code used in RECO and AOD. To find Lambda0 and Kshort
-// Package:    V0Producer
-// Class:      V0Fitter
-//
-/**\class V0Fitter V0Fitter.h RecoVertex/V0Producer/interface/V0Fitter.h
-
- Description: <one line class summary>
-
- Implementation:
-     <Notes on implementation>
-*/
-//
-// Original Author:  Brian Drell
-//         Created:  Fri May 18 22:57:40 CEST 2007
-// $Id: V0Fitter.h,v 1.22 2010/06/19 03:24:33 drell Exp $
-//
-//
-
+// ccLoader is used to draw lots of histograms by EDAnalyzer.
+// it is a quickly drawing by load labels.
+// It can load 'VertexCompositeCandidateCollection' and 'pat::CompositeCandidateCollection'
+// but not it is completed for vcc. pat part is incompleted.
+// And there is no cut in this code. If you need cut.
+// It is recommended to write a tree and cut.
 #ifndef __ccLoader_H__
 #define __ccLoader_H__
 
@@ -111,6 +97,11 @@ private:
 
     void createHisto(const std::string& name, int nbin, float hmin, float hmax);
     void fillHisto(const std::string& name, float x);
+
+    bool isKshort( reco::VertexCompositeCandidate& cand );
+    bool isKstar ( reco::VertexCompositeCandidate& cand );
+    bool isBd    ( reco::VertexCompositeCandidate& cand );
+    bool isBs    ( reco::VertexCompositeCandidate& cand );
 
 public:
     // Helper method that does the actual fitting using the KalmanVertexFitter

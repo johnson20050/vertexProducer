@@ -2,6 +2,14 @@ import FWCore.ParameterSet.Config as cms
 
 
 recoOptions = cms.VPSet(
+        #cms.PSet(
+        #    vccLabel = cms.string('fourTracksFromVCCProducer:testLbL0:myVertexingProcedure'),
+        #   #patLabel = cms.string('lbWriteSpecificDecay:LbTkFitted:bphAnalysis'),
+        #    beamspotLabel = cms.string('offlineBeamSpot::RECO'),
+        #    candName = cms.string('LambdaFromV0'),
+        #    MassFrameMin = cms.double(5.4),
+        #    MassFrameMax = cms.double(5.8),
+        #    ),
         cms.PSet(
             vccLabel = cms.string('generalV0Candidates:Lambda:RECO'),
            #patLabel = cms.string('lbWriteSpecificDecay:LbTkFitted:bphAnalysis'),
@@ -30,7 +38,7 @@ recoOptions = cms.VPSet(
             vccLabel = cms.string('fourTracksFromVCCProducer:LbL0:myVertexingProcedure'),
            #patlabel = cms.string('lbwritespecificdecay:lbtkfitted:bphanalysis'),
             beamspotLabel = cms.string('offlineBeamSpot::RECO'),
-            candName = cms.string('LbTkfromfourTracks'),
+            candName = cms.string('LbL0fromfourTracks'),
             MassFrameMin = cms.double(5.4),
             MassFrameMax = cms.double(5.8),
             ),
@@ -38,7 +46,7 @@ recoOptions = cms.VPSet(
             vccLabel = cms.string('fourTracksFromVCCProducer:LbTk:myVertexingProcedure'),
            #patlabel = cms.string('lbwritespecificdecay:lbtkfitted:bphanalysis'),
             beamspotLabel = cms.string('offlineBeamSpot::RECO'),
-            candName = cms.string('LbL0fromfourTracks'),
+            candName = cms.string('LbTkfromfourTracks'),
             MassFrameMin = cms.double(5.4),
             MassFrameMax = cms.double(5.8),
             ),
