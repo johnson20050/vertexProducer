@@ -39,6 +39,12 @@
 
 #include "vertexProducer/vertexProducer/plugins/fourTracksFromVCCProducer.h"
 
+namespace
+{
+    const float kaMASS = 0.493667;
+    const float piMASS = 0.13957018;
+    const float muMASS = 0.1056583715;
+}
 
 // Constructor and (empty) destructor
 fourTracksFitter::fourTracksFitter(const edm::ParameterSet & theParameters,
@@ -148,6 +154,17 @@ void fourTracksFitter::fillInContainer()
         tmpContainerToTkTkCands = nullptr;
     return;
 }
+bool fourTracksFitter::overlap( const reco::RecoChargedCandidate& c1, const reco::RecoChargedCandidate& c2 )
+{
+    //bool checkOverlap = [&c1, &c2]( reco::TrackRef obj1, reco::TrackRef obj2 ) 
+    auto checkOverlap = []( reco::TrackRef obj1, reco::TrackRef obj2 ) 
+    { return ( !obj1.isNull() && !obj2.isNull() && obj1==obj2 ); };
+    if ( checkOverlap(c1.track(), c2.track()) ) return true;
+    if ( checkOverlap(c1.track(), c2.standAloneMuon()) ) return true;
+    if ( checkOverlap(c1.track(), c2.combinedMuon()) ) return true;
+
+    return false;
+}
 void fourTracksFitter::clearAndInitializeContainer()
 {
         nCandsSize = 0;
@@ -230,6 +247,9 @@ void fourTracksFitter::recordParingSources(const edm::Event & iEvent, const edm:
 void fourTracksFitter::clearRecoredSources()
 {
     recorded = false;
+    usedCandidateMuMu.clear();
+    usedCandidateTkTk.clear();
+    
     theBeamSpotHandlePtr.release();
     theMuMuPairHandlePtr.release();
     theTkTkPairHandlePtr.release();
@@ -241,6 +261,156 @@ void fourTracksFitter::clearRecoredSources()
     globTkGeomHandlePtr.reset(new edm::ESHandle<GlobalTrackingGeometry>());
     bFieldHandlePtr.reset(new edm::ESHandle<MagneticField>());
     return;
+}
+void fourTracksFitter::excludeKnownParticles( const edm::Event& iEvent, const edm::EventSetup& iSetupe )
+{
+    if ( !recorded ) return;
+    usedCandidateMuMu.clear();
+    usedCandidateTkTk.clear();
+    const reco::VertexCompositeCandidateCollection& mumuCands = *(theMuMuPairHandlePtr->product());
+    const reco::VertexCompositeCandidateCollection& tktkCands = *(theTkTkPairHandlePtr->product());
+    const MagneticField* magField = bFieldHandlePtr->product();
+    const edm::ESHandle<GlobalTrackingGeometry>& globTkGeomHandle = *(globTkGeomHandlePtr.get());
+
+
+
+    // load mumuCandidate & tktkCandidate to do the vertexing
+    for ( unsigned mumuIdx = 0; mumuIdx != mumuCands.size(); ++mumuIdx )
+    {
+        const reco::VertexCompositeCandidate& mumuCand = mumuCands[mumuIdx];
+        const reco::RecoChargedCandidate* muPosCandPtr = dynamic_cast<const reco::RecoChargedCandidate*>( mumuCand.daughter("MuPos") );
+        const reco::RecoChargedCandidate* muNegCandPtr = dynamic_cast<const reco::RecoChargedCandidate*>( mumuCand.daughter("MuNeg") );
+        
+        
+        for ( unsigned tktkIdx = 0; tktkIdx != tktkCands.size(); ++tktkIdx )
+        //for ( int tktkIdx = 0; tktkIdx < tktkCands.size(); ++tktkIdx )
+        {
+            const reco::VertexCompositeCandidate& tktkCand = tktkCands[tktkIdx];
+            const reco::RecoChargedCandidate* tkPosCandPtr = dynamic_cast<const reco::RecoChargedCandidate*>( tktkCand.daughter("PiPos") );
+            const reco::RecoChargedCandidate* tkNegCandPtr = dynamic_cast<const reco::RecoChargedCandidate*>( tktkCand.daughter("PiNeg") );
+
+
+            // build trackRef & TransientTracks
+            reco::TrackRef muPosTkRef =  muPosCandPtr->track();
+            reco::TrackRef muNegTkRef =  muNegCandPtr->track();
+            reco::TrackRef tkPosTkRef =  tkPosCandPtr->track();
+            reco::TrackRef tkNegTkRef =  tkNegCandPtr->track();
+
+            reco::TransientTrack muPosTransTk( *muPosTkRef, magField, globTkGeomHandle );
+            reco::TransientTrack muNegTransTk( *muNegTkRef, magField, globTkGeomHandle );
+            reco::TransientTrack tkPosTransTk( *tkPosTkRef, magField, globTkGeomHandle );
+            reco::TransientTrack tkNegTransTk( *tkNegTkRef, magField, globTkGeomHandle );
+
+            // for check
+            GlobalPoint tktkVTX ( tktkCand.vertex().x(),tktkCand.vertex().y(),  tktkCand.vertex().z() );
+            GlobalPoint mumuVTX ( mumuCand.vertex().x(),mumuCand.vertex().y(),  mumuCand.vertex().z() );
+            GlobalVector mpMom = muPosTransTk.trajectoryStateClosestToPoint(mumuVTX).momentum();
+            GlobalVector mnMom = muNegTransTk.trajectoryStateClosestToPoint(mumuVTX).momentum();
+            GlobalVector tpMom = tkPosTransTk.trajectoryStateClosestToPoint(tktkVTX).momentum();
+            GlobalVector tnMom = tkNegTransTk.trajectoryStateClosestToPoint(tktkVTX).momentum();
+            if ( fabs(mpMom.mag()-tpMom.mag()) < 0.001 ) continue;
+            if ( fabs(mnMom.mag()-tnMom.mag()) < 0.001 ) continue;
+
+            KinematicParticleFactoryFromTransientTrack pFactory;
+            std::vector<RefCountedKinematicParticle> mumutktkCand;
+            mumutktkCand.reserve(4);
+            float m1sig = muMASS*1e-6;
+            float m2sig = muMASS*1e-6;
+            float m3sig = kaMASS*1e-6;
+            float m4sig = piMASS*1e-6;
+            mumutktkCand.push_back( pFactory.particle(muPosTransTk,muMASS, 0., 0., m1sig) );
+            mumutktkCand.push_back( pFactory.particle(muNegTransTk,muMASS, 0., 0., m2sig) );
+            mumutktkCand.push_back( pFactory.particle(tkPosTransTk,kaMASS, 0., 0., m3sig) );
+            mumutktkCand.push_back( pFactory.particle(tkNegTransTk,piMASS, 0., 0., m4sig) );
+
+            RefCountedKinematicTree fourTracksKineTree;
+            double jpsiMass = 3.096916;
+            MultiTrackKinematicConstraint* mumuConstr = new TwoTrackMassKinematicConstraint( jpsiMass );
+            KinematicConstrainedVertexFitter kcvFitter;
+            fourTracksKineTree = kcvFitter.fit( mumutktkCand, mumuConstr );
+            if ( !fourTracksKineTree->isValid() ) continue;
+            fourTracksKineTree->movePointerToTheTop();
+
+            RefCountedKinematicParticle candKineParticle = fourTracksKineTree->currentParticle();
+            RefCountedKinematicVertex   candKineVertex   = fourTracksKineTree->currentDecayVertex();
+            if ( !candKineVertex->vertexIsValid() ) continue;
+
+            reco::Particle::LorentzVector candP4( 
+                    candKineParticle->currentState().kinematicParameters().momentum().x(),
+                    candKineParticle->currentState().kinematicParameters().momentum().y(),
+                    candKineParticle->currentState().kinematicParameters().momentum().z(),
+                    candKineParticle->currentState().kinematicParameters().energy() );
+
+            // start to get daughter information.
+            fourTracksKineTree->movePointerToTheTop();
+            fourTracksKineTree->movePointerToTheFirstChild();
+            RefCountedKinematicParticle pMuMomRefitted = fourTracksKineTree->currentParticle();
+            reco::Particle::LorentzVector pMuCandP4(
+                        pMuMomRefitted->currentState().kinematicParameters().momentum().x(),
+                        pMuMomRefitted->currentState().kinematicParameters().momentum().y(),
+                        pMuMomRefitted->currentState().kinematicParameters().momentum().z(),
+                        pMuMomRefitted->currentState().kinematicParameters().energy() );
+
+            fourTracksKineTree->movePointerToTheNextChild();
+            RefCountedKinematicParticle nMuMomRefitted = fourTracksKineTree->currentParticle();
+            reco::Particle::LorentzVector nMuCandP4(
+                        nMuMomRefitted->currentState().kinematicParameters().momentum().x(),
+                        nMuMomRefitted->currentState().kinematicParameters().momentum().y(),
+                        nMuMomRefitted->currentState().kinematicParameters().momentum().z(),
+                        nMuMomRefitted->currentState().kinematicParameters().energy() );
+
+            fourTracksKineTree->movePointerToTheNextChild();
+            RefCountedKinematicParticle pTkMomRefitted = fourTracksKineTree->currentParticle();
+            reco::Particle::LorentzVector pTkCandP4(
+                        pTkMomRefitted->currentState().kinematicParameters().momentum().x(),
+                        pTkMomRefitted->currentState().kinematicParameters().momentum().y(),
+                        pTkMomRefitted->currentState().kinematicParameters().momentum().z(),
+                        pTkMomRefitted->currentState().kinematicParameters().energy() );
+
+            fourTracksKineTree->movePointerToTheNextChild();
+            RefCountedKinematicParticle nTkMomRefitted = fourTracksKineTree->currentParticle();
+            reco::Particle::LorentzVector nTkCandP4(
+                        nTkMomRefitted->currentState().kinematicParameters().momentum().x(),
+                        nTkMomRefitted->currentState().kinematicParameters().momentum().y(),
+                        nTkMomRefitted->currentState().kinematicParameters().momentum().z(),
+                        nTkMomRefitted->currentState().kinematicParameters().energy() );
+            reco::Particle::LorentzVector tktkCandP4 = pTkCandP4 + nTkCandP4;
+
+            // build Bd->JPsi + K*(892)
+            if ( tktkCandP4.mass()>0.7 )
+                if ( tktkCandP4.mass()<1.1 )
+                    if ( candP4.mass()>5.2 )
+                        if ( candP4.mass()<5.35 )
+                            fillPair( mumuIdx, tktkIdx );
+
+            // build Bd->JPsi + K*(1432)
+            if ( tktkCandP4.mass()>1.3 )
+                if ( tktkCandP4.mass()<1.5 )
+                    if ( candP4.mass()>5.2 )
+                        if ( candP4.mass()<5.35 )
+                            fillPair( mumuIdx, tktkIdx );
+
+            
+            // build Bd->JPsi + K*(892)_bar
+            pTkCandP4.SetE(sqrt(pTkCandP4.P2()+piMASS*piMASS));
+            nTkCandP4.SetE(sqrt(nTkCandP4.P2()+kaMASS*kaMASS));
+            tktkCandP4 = pTkCandP4+nTkCandP4;
+            candP4 = pMuCandP4+nMuCandP4+tktkCandP4;
+            if ( tktkCandP4.mass()>0.7 )
+                if ( tktkCandP4.mass()<1.1 )
+                    if ( candP4.mass()>5.2 )
+                        if ( candP4.mass()<5.35 )
+                            fillPair( mumuIdx, tktkIdx );
+
+            // build Bd->JPsi + K*(1432)_bar
+            if ( tktkCandP4.mass()>0.7 )
+                if ( tktkCandP4.mass()<1.1 )
+                    if ( candP4.mass()>5.2 )
+                        if ( candP4.mass()<5.35 )
+                            fillPair( mumuIdx, tktkIdx );
+
+        } // tktkPair loop end
+    } // mumuPair loop end
 }
 
 void fourTracksFitter::initializeEvent( const edm::ParameterSet& theParameters, edm::ConsumesCollector&& iC )
@@ -254,6 +424,31 @@ void fourTracksFitter::clearEvent()
 {
     return;
 }
+bool fourTracksFitter::usedPair(unsigned mumuIdx, unsigned tktkIdx ) const
+{
+    for ( unsigned recMuMuIdx : usedCandidateMuMu )
+        if ( recMuMuIdx == mumuIdx )
+            return true;
+    for ( unsigned recTkTkIdx : usedCandidateTkTk )
+        if ( recTkTkIdx == tktkIdx )
+            return true;
+    return false;
+}
+
+void fourTracksFitter::fillPair( unsigned mumuIdx, unsigned tktkIdx )
+{
+    bool muTag = true;
+    bool tkTag = true;
+    for ( unsigned mIdx : usedCandidateMuMu )
+        if ( mumuIdx == mIdx )
+            muTag = false;
+    for ( unsigned tIdx : usedCandidateTkTk )
+        if ( tktkIdx == tIdx )
+            tkTag = false;
+    if ( muTag ) usedCandidateMuMu.emplace_back(muTag);
+    if ( tkTag ) usedCandidateTkTk.emplace_back(tkTag);
+    return;
+}
 
 bool fourTracksFitter::recorded = false;
 // Handles for tracks, B-field, and tracker geometry
@@ -265,3 +460,5 @@ std::unique_ptr<edm::ESHandle<MagneticField>                         > fourTrack
 edm::EDGetTokenT< reco::VertexCompositeCandidateCollection > fourTracksFitter::mumuPairToken;
 edm::EDGetTokenT< reco::VertexCompositeCandidateCollection > fourTracksFitter::tktkPairToken;
 edm::EDGetTokenT< reco::BeamSpot                           > fourTracksFitter::beamspotToken;
+std::vector<unsigned> fourTracksFitter::usedCandidateMuMu;
+std::vector<unsigned> fourTracksFitter::usedCandidateTkTk;

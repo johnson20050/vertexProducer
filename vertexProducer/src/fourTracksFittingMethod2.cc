@@ -36,6 +36,7 @@ void fourTracksFittingMethod2::fitAll(const edm::Event & iEvent, const edm::Even
         for ( unsigned tktkIdx = 0; tktkIdx != tktkCands.size(); ++tktkIdx )
         //for ( int tktkIdx = 0; tktkIdx < tktkCands.size(); ++tktkIdx )
         {
+            if ( fourTracksFitter::usedPair(mumuIdx, tktkIdx) ) continue;
             const reco::VertexCompositeCandidate& tktkCand = tktkCands[tktkIdx];
             const reco::RecoChargedCandidate* tkPosCandPtr = dynamic_cast<const reco::RecoChargedCandidate*>( tktkCand.daughter("PiPos") );
             const reco::RecoChargedCandidate* tkNegCandPtr = dynamic_cast<const reco::RecoChargedCandidate*>( tktkCand.daughter("PiNeg") );
@@ -44,11 +45,11 @@ void fourTracksFittingMethod2::fitAll(const edm::Event & iEvent, const edm::Even
             reco::Particle::LorentzVector tktkPreSelP4 = tkPosP4+tkNegP4;
 
             // preselections
-            double cosa2d = Cosa2d( tktkCand, mumuCand );
-            if ( cosa2d < optD[Cosa2dPreCut_tktkTomumu] ) continue;
-            // fd need to biggerr than N sigma.
-            double fdSig = FDSig( tktkCand, mumuCand );
-            if ( fdSig < optD[FDSigPreCut_tktkTomumu] ) continue;
+            // double cosa2d = Cosa2d( tktkCand, mumuCand );
+            // if ( cosa2d < optD[Cosa2dPreCut_tktkTomumu] ) continue;
+            // // fd need to biggerr than N sigma.
+            // double fdSig = FDSig( tktkCand, mumuCand );
+            // if ( fdSig < optD[FDSigPreCut_tktkTomumu] ) continue;
             // pt need to bigger than N GeV
             if ( muPosCandPtr->pt() < optD[ptPreCut_muPos] ) continue;
             if ( muNegCandPtr->pt() < optD[ptPreCut_muNeg] ) continue;
@@ -188,11 +189,12 @@ void fourTracksFittingMethod2::fitAll(const edm::Event & iEvent, const edm::Even
             const reco::Vertex::CovarianceMatrix tktkVtxCov(tktkVtx.covariance());
             // tested
             RefCountedKinematicParticle TkTkMomRefitted = fourTracksKineTree->currentParticle();
-            reco::RecoChargedCandidate TkTkCand( 0, reco::Particle::LorentzVector(
+            reco::VertexCompositeCandidate TkTkCand( 0, reco::Particle::LorentzVector(
                         TkTkMomRefitted->currentState().kinematicParameters().momentum().x(),
                         TkTkMomRefitted->currentState().kinematicParameters().momentum().y(),
                         TkTkMomRefitted->currentState().kinematicParameters().momentum().z(),
-                        TkTkMomRefitted->currentState().kinematicParameters().energy() ), vtx );
+                        TkTkMomRefitted->currentState().kinematicParameters().energy() ), 
+                        tktkVtx.position(), tktkVtxCov, tktkKineVertex->chiSquared(), tktkKineVertex->degreesOfFreedom() );
 
             AddFourMomenta addp4;
 
@@ -208,24 +210,42 @@ void fourTracksFittingMethod2::fitAll(const edm::Event & iEvent, const edm::Even
 //    typedef ROOT::Math::SVector< double, 3 > SVector3;
 //            SMatrixSym3D mumuCOV = pMuVtxCov + nMuVtxCov;
 //            SMatrixSym3D mutkCOV = pMuVtxCov + tktkVtxCov;
-//            SMatrixSym3D tktkCOV = tktkVtxCov+ tktkCand.vertexCovariance();
+//            SMatrixSym3D tktkCOV = vtxCov+ tktkCand.vertexCovariance();
+//            SMatrixSym3D muJPCOV = mumuCand.vertexCovariance() + vtxCov;
 //            SVector3 mumuFDvector( pMuVtx.x() - nMuVtx.x(), pMuVtx.y() - nMuVtx.y(), 0. ); 
 //            SVector3 mutkFDvector( pMuVtx.x() -tktkVtx.x(),pMuVtx.y() -tktkVtx.y(), 0. );
-//            SVector3 tktkFDvector( tktkVTX.x()-tktkVtx.x(),tktkVTX.y()-tktkVtx.y(), 0. );
-//            double mumuFDmag = ROOT::Math::Mag( mumuFDvector );
-//            double mutkFDmag = ROOT::Math::Mag( mutkFDvector );
-//            double tktkFDmag = ROOT::Math::Mag( tktkFDvector );
+//            SVector3 tktkFDvector( tktkVTX.x()-    vtx.x(),tktkVTX.y()-    vtx.y(), 0. );
+//            SVector3 muJPFDvector( mumuVTX.x()-    vtx.x(), mumuVTX.y()-    vtx.y(), 0. );
+//            double mumuFDmag = ROOT::Math::Mag( mumuFDvector ); 
+//            double mutkFDmag = ROOT::Math::Mag( mutkFDvector ); 
+//            double tktkFDmag = ROOT::Math::Mag( tktkFDvector ); 
+//            double muJPFDmag = ROOT::Math::Mag( muJPFDvector ); 
 //            double mumuFDerr = sqrt( ROOT::Math::Similarity(mumuCOV, mumuFDvector) ) / mumuFDmag;
 //            double mutkFDerr = sqrt( ROOT::Math::Similarity(mutkCOV, mutkFDvector) ) / mutkFDmag;
 //            double tktkFDerr = sqrt( ROOT::Math::Similarity(tktkCOV, tktkFDvector) ) / tktkFDmag;
+//            double muJPFDerr = sqrt( ROOT::Math::Similarity(muJPCOV, muJPFDvector) ) / muJPFDmag;
 //
 //            double mumuFDSig = mumuFDmag / mumuFDerr;
 //            double mutkFDSig = mutkFDmag / mutkFDerr;
 //            double tktkFDSig = tktkFDmag / tktkFDerr;
+//            double muJPFDSig = muJPFDmag / muJPFDerr;
 //            std::cout << "--------fourTracksFitter2::fitAll() : ";
 //            if ( mumuFDSig > 0.5 ) printf(" ---- mu mu is NOT at the same vertex %.4f ---- ", mumuFDSig );
+//            else printf("    __mu mu SAME %.4f__    ", mumuFDSig );
 //            if ( mutkFDSig < 5.  ) printf(" ---- jpsi Lambda0 IS at the same vertex %.4f ---- ", mutkFDSig );
-//            if ( tktkFDSig > 0.5 ) printf(" ---- tktk Lambda0 is NOT at the same vertex %.4f ---- ", tktkFDSig );
+//            else printf("    __jpsi lam0 displaced %.4f__    ", mutkFDSig);
+//            if ( muJPFDSig > 0.5 ) printf(" ---- LambdaB jpsi is not at the same vertex %.4f ---- ", muJPFDSig );
+//            else printf("    __LambdaB jpsi SAME %.4f__    ", muJPFDSig);
+//            if ( tktkFDSig > 0.5 ) printf(" ---- LambdaB Lambda0 is NOT at the same vertex %.4f ---- ", tktkFDSig );
+//            else printf("    __LambdaB lam0 SAME %.4f__    ", tktkFDSig);
+//            printf(" : : : : normalizedChi2 = %.8f", vtxChi2/vtxNdof);
+//            std::cout << std::endl;
+//            if ( fabs(tktkVtx.x() -    vtx.x())<0.00000001 && fabs(tktkVtx.y() -    vtx.y())<0.0000001 ) printf("    :::   refit tktk vertex point is LambdaB  :::   ");
+//            if ( fabs( pMuVtx.x() -    vtx.x())<0.00000001 && fabs( pMuVtx.y() -    vtx.y())<0.0000001 ) printf("    :::   refit pMu vertex point is LambdaB   :::   ");
+//            if ( fabs( nMuVtx.x() -    vtx.x())<0.00000001 && fabs( nMuVtx.y() -    vtx.y())<0.0000001 ) printf("    :::   refit nMu vertex point is LambdaB   :::   ");
+//            if ( fabs( nMuVtx.x() - pMuVtx.x())<0.00000001 && fabs( nMuVtx.y() - pMuVtx.y())<0.0000001 ) printf("    :::   refit nMu vertex point is pMu       :::   ");
+//            if ( fabs(tktkVtx.x() - pMuVtx.x())<0.00000001 && fabs(tktkVtx.y() - pMuVtx.y())<0.0000001 ) printf("    :::   refit nMu vertex point is Lambda0   :::   ");
+//            if ( fabs( nMuVtx.x() -tktkVtx.x())<0.00000001 && fabs( nMuVtx.y() -tktkVtx.y())<0.0000001 ) printf("    :::   refit pMu vertex point is Lambda0   :::   ");
 //            std::cout << std::endl;
 //            // tested
 

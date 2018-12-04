@@ -37,6 +37,15 @@
 #include "RecoVertex/KalmanVertexFit/interface/KalmanVertexFitter.h"
 #include "RecoVertex/AdaptiveVertexFit/interface/AdaptiveVertexFitter.h"
 
+#include "CommonTools/CandUtils/interface/AddFourMomenta.h"
+#include "DataFormats/Candidate/interface/VertexCompositeCandidate.h"
+#include "DataFormats/RecoCandidate/interface/RecoChargedCandidate.h"
+#include "RecoVertex/KinematicFitPrimitives/interface/KinematicParticleFactoryFromTransientTrack.h"
+#include "RecoVertex/KinematicFitPrimitives/interface/MultiTrackKinematicConstraint.h"
+#include "RecoVertex/KinematicFit/interface/KinematicConstrainedVertexFitter.h"
+#include "RecoVertex/KinematicFit/interface/TwoTrackMassKinematicConstraint.h"
+#include "RecoVertex/KinematicFit/interface/KinematicParticleVertexFitter.h"
+
 #include "MagneticField/Records/interface/IdealMagneticFieldRecord.h"
 #include "MagneticField/VolumeBasedEngine/interface/VolumeBasedMagneticField.h"
 
@@ -125,11 +134,20 @@ protected:
     static std::unique_ptr<edm::ESHandle<MagneticField>                         > bFieldHandlePtr;
     static std::unique_ptr<edm::ESHandle<GlobalTrackingGeometry>                > globTkGeomHandlePtr;
 
+    static std::vector<unsigned> usedCandidateMuMu;
+    static std::vector<unsigned> usedCandidateTkTk;
+    
+
+private:
+    static void fillPair( unsigned mumuIdx, unsigned tktkIdx );
 public:
     static void initializeEvent( const edm::ParameterSet& theParameters, edm::ConsumesCollector&& iC );
     static void clearEvent();
-    static void clearRecoredSources();
     static void recordParingSources( const edm::Event& iEvent, const edm::EventSetup& iSetup );
+    static void clearRecoredSources();
+    static void excludeKnownParticles( const edm::Event& iEvent, const edm::EventSetup& iSetup );
+    static bool overlap( const reco::RecoChargedCandidate& c1, const reco::RecoChargedCandidate& c2 );
+    
 
     // Helper method that does the actual fitting using the KalmanVertexFitter
     virtual void fitAll(const edm::Event& iEvent, const edm::EventSetup& iSetup) = 0;
@@ -141,6 +159,7 @@ public:
     double FDSig(const reco::VertexCompositeCandidate& cand1, const reco::VertexCompositeCandidate& cand2);
     double FDSig(const reco::VertexCompositeCandidate&  cand1, const reco::BeamSpot& bSpot);
     double Cosa2d( const reco::VertexCompositeCandidate& cand1, const reco::VertexCompositeCandidate& cand2 );
+    bool usedPair( unsigned mumuIdx, unsigned tktkIdx ) const;
 };
 
 

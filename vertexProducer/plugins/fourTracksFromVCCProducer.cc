@@ -74,6 +74,7 @@ void fourTracksFromVCCProducer::produce(edm::Event& iEvent, const edm::EventSetu
 
     fourTracksFitter::clearRecoredSources();
     fourTracksFitter::recordParingSources( iEvent, iSetup );
+    fourTracksFitter::excludeKnownParticles( iEvent, iSetup );
     // Create V0Fitter object which reconstructs the vertices and creates
     for ( const auto& fitter : myFitter )
     {

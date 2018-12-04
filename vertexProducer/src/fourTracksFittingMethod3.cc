@@ -36,6 +36,7 @@ void fourTracksFittingMethod3::fitAll(const edm::Event & iEvent, const edm::Even
         for ( unsigned tktkIdx = 0; tktkIdx != tktkCands.size(); ++tktkIdx )
         //for ( int tktkIdx = 0; tktkIdx < tktkCands.size(); ++tktkIdx )
         {
+            if ( fourTracksFitter::usedPair(mumuIdx, tktkIdx) ) continue;
             const reco::VertexCompositeCandidate& tktkCand = tktkCands[tktkIdx];
             const reco::RecoChargedCandidate* tkPosCandPtr = dynamic_cast<const reco::RecoChargedCandidate*>( tktkCand.daughter("PiPos") );
             const reco::RecoChargedCandidate* tkNegCandPtr = dynamic_cast<const reco::RecoChargedCandidate*>( tktkCand.daughter("PiNeg") );
