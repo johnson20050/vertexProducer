@@ -39,6 +39,13 @@
 #include <memory>
 
 #define SET_LABEL(NAME,PSET) ( NAME=PSET.getParameter<std::string>(#NAME) )
+namespace
+{
+    const double kaonMass = 0.493667;
+    const double pionMass = 0.13957018;
+    const double ptonMass = 0.938272046;
+    const double muonMass = 0.1056583715;
+}
 
 // Constructor and (empty) destructor
 ccLoader::ccLoader(const edm::ParameterSet & theParameters,
@@ -99,6 +106,11 @@ void ccLoader::calc(const edm::Event & iEvent, const edm::EventSetup & iSetup)
         while ( iter != iend )
         {
             const reco::VertexCompositeCandidate& cand = *iter++;
+            //if ( isKshort(cand) ) continue;
+            //if ( isKstar(cand) ) continue;
+            //if ( isBs(cand) ) continue;
+            //if ( isBd(cand) ) continue;
+
             fillHisto("mass", cand.mass());
         }
     }
@@ -141,4 +153,49 @@ void ccLoader::createHistos()
     createHisto("mass", 60, optD[mMassRegion], optD[MMassRegion]);
 
     //_dir->make<TNtupleD>("nt"
+}
+
+bool ccLoader::isKshort( reco::VertexCompositeCandidate& cand )
+{
+    //if ( cand.numberOfDaughters() != 2 ) return false;
+    //const reco::RecoChargedCandidate* tk1Ptr = dynamic_cast<const reco::RecoChargedCandidate*>( cand.daughter(0) );
+    //const reco::RecoChargedCandidate* tk2Ptr = dynamic_cast<const reco::RecoChargedCandidate*>( cand.daughter(1) );
+
+    //TLorentzVector tk1Mom, tk2Mom;
+    //tk1Mom.SetXYZM(tk1Ptr->px(), tk1Ptr->py(), tk1Ptr->pz(), pionMass);
+    //tk2Mom.SetXYZM(tk2Ptr->px(), tk2Ptr->py(), tk2Ptr->pz(), pionMass);
+
+    //if ( (tk1Mom+tk2Mom).Mag() > 0.49 &&
+    //     (tk1Mom+tk2Mom).Mag() < 0.51 )  return true;
+    return false;
+}
+bool ccLoader::isKstar( reco::VertexCompositeCandidate& cand )
+{
+//    if ( cand.numberOfDaughters() != 2 ) return false;
+//    const reco::RecoChargedCandidate* tk1Ptr = dynamic_cast<const reco::RecoChargedCandidate*>( cand.daughter(0) );
+//    const reco::RecoChargedCandidate* tk2Ptr = dynamic_cast<const reco::RecoChargedCandidate*>( cand.daughter(1) );
+//
+//    TLorentzVector tk1Mom, tk2Mom;
+//    tk1Mom.SetXYZM(tk1Ptr->px(), tk1Ptr->py(), tk1Ptr->pz(), kaonMass);
+//    tk2Mom.SetXYZM(tk2Ptr->px(), tk2Ptr->py(), tk2Ptr->pz(), pionMass);
+//
+//    if ( (tk1Mom+tk2Mom).Mag() > 0.8 &&
+//         (tk1Mom+tk2Mom).Mag() < 1.0 )  return true;
+//
+//    tk1Mom.SetXYZM(tk1Ptr->px(), tk1Ptr->py(), tk1Ptr->pz(), pionMass);
+//    tk2Mom.SetXYZM(tk2Ptr->px(), tk2Ptr->py(), tk2Ptr->pz(), kaonMass);
+//
+//    if ( (tk1Mom+tk2Mom).Mag() > 0.8 &&
+//         (tk1Mom+tk2Mom).Mag() < 1.0 )  return true;
+//
+//
+    return false;
+}
+bool ccLoader::isBd( reco::VertexCompositeCandidate& cand )
+{
+    return false;
+}
+bool ccLoader::isBs( reco::VertexCompositeCandidate& cand )
+{
+    return false;
 }

@@ -1,6 +1,9 @@
 // -*- C++ -*-
 //
-// modified from V0Fitter. It is a cmssw code used in RECO and AOD. To find Lambda0 and Kshort
+// modified from V0Fitter. It is a cmssw code used in RECO and AOD. To find mumutktk combinations.
+// This fourTracksFitter class is a abstract class. It is not able to be used directly.
+// Its usage is presented in fourTrackFromVCCProducer.cc.
+//
 // Package:    V0Producer
 // Class:      V0Fitter
 //
@@ -34,6 +37,15 @@
 #include "RecoVertex/KalmanVertexFit/interface/KalmanVertexFitter.h"
 #include "RecoVertex/AdaptiveVertexFit/interface/AdaptiveVertexFitter.h"
 
+#include "CommonTools/CandUtils/interface/AddFourMomenta.h"
+#include "DataFormats/Candidate/interface/VertexCompositeCandidate.h"
+#include "DataFormats/RecoCandidate/interface/RecoChargedCandidate.h"
+#include "RecoVertex/KinematicFitPrimitives/interface/KinematicParticleFactoryFromTransientTrack.h"
+#include "RecoVertex/KinematicFitPrimitives/interface/MultiTrackKinematicConstraint.h"
+#include "RecoVertex/KinematicFit/interface/KinematicConstrainedVertexFitter.h"
+#include "RecoVertex/KinematicFit/interface/TwoTrackMassKinematicConstraint.h"
+#include "RecoVertex/KinematicFit/interface/KinematicParticleVertexFitter.h"
+
 #include "MagneticField/Records/interface/IdealMagneticFieldRecord.h"
 #include "MagneticField/VolumeBasedEngine/interface/VolumeBasedMagneticField.h"
 
@@ -54,6 +66,7 @@
 #include <string>
 #include <fstream>
 #include <stdio.h>
+#include <memory>
 
 class fourTracksFitter
 {
@@ -79,13 +92,7 @@ protected:
     unsigned nCandsSize;
     unsigned tmpContainerSize;
 
-    // Tracker geometry for discerning hit positions
 
-    const MagneticField* magField;
-
-    edm::EDGetTokenT< reco::VertexCompositeCandidateCollection > mumuPairToken;
-    edm::EDGetTokenT< reco::VertexCompositeCandidateCollection > tktkPairToken;
-    edm::EDGetTokenT< reco::BeamSpot                           > beamspotToken;
 
     // variables to be decided from python file
     double* optD;
@@ -113,18 +120,35 @@ protected:
     };
     enum parS
     {
-        candName, tkPosName, tkNegName, muPosName, muNegName,
+        candName, mumuName, tktkName, tkPosName, tkNegName, muPosName, muNegName,
         totNumS
     };
 
-//    static void clearRecoredSources();
-//    static void recordParingSources( const edm::Event& iEvent, const edm::EventSetup& iSetup );
-//    static reco::VertexCompositeCandidateCollection recordMuMuCands;
-//    static reco::VertexCompositeCandidateCollection recordTkTkCands;
-//    static bool recorded;
+    static bool recorded;
+    static edm::EDGetTokenT<reco::VertexCompositeCandidateCollection> mumuPairToken;
+    static edm::EDGetTokenT<reco::VertexCompositeCandidateCollection> tktkPairToken;
+    static edm::EDGetTokenT<reco::BeamSpot                          > beamspotToken;
+    static std::unique_ptr<edm::Handle<reco::BeamSpot>                          > theBeamSpotHandlePtr;
+    static std::unique_ptr<edm::Handle<reco::VertexCompositeCandidateCollection>> theMuMuPairHandlePtr;
+    static std::unique_ptr<edm::Handle<reco::VertexCompositeCandidateCollection>> theTkTkPairHandlePtr;
+    static std::unique_ptr<edm::ESHandle<MagneticField>                         > bFieldHandlePtr;
+    static std::unique_ptr<edm::ESHandle<GlobalTrackingGeometry>                > globTkGeomHandlePtr;
 
+    static std::vector<unsigned> usedCandidateMuMu;
+    static std::vector<unsigned> usedCandidateTkTk;
+    
 
+private:
+    static void fillPair( unsigned mumuIdx, unsigned tktkIdx );
 public:
+    static void initializeEvent( const edm::ParameterSet& theParameters, edm::ConsumesCollector&& iC );
+    static void clearEvent();
+    static void recordParingSources( const edm::Event& iEvent, const edm::EventSetup& iSetup );
+    static void clearRecoredSources();
+    static void excludeKnownParticles( const edm::Event& iEvent, const edm::EventSetup& iSetup );
+    static bool overlap( const reco::RecoChargedCandidate& c1, const reco::RecoChargedCandidate& c2 );
+    
+
     // Helper method that does the actual fitting using the KalmanVertexFitter
     virtual void fitAll(const edm::Event& iEvent, const edm::EventSetup& iSetup) = 0;
 
@@ -132,11 +156,10 @@ public:
     bool nothingToWritten() { return nCandsSize == 0 ? true : false; }
     void clearAndInitializeContainer();
 
-
-
     double FDSig(const reco::VertexCompositeCandidate& cand1, const reco::VertexCompositeCandidate& cand2);
     double FDSig(const reco::VertexCompositeCandidate&  cand1, const reco::BeamSpot& bSpot);
     double Cosa2d( const reco::VertexCompositeCandidate& cand1, const reco::VertexCompositeCandidate& cand2 );
+    bool usedPair( unsigned mumuIdx, unsigned tktkIdx ) const;
 };
 
 

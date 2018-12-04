@@ -1,5 +1,18 @@
 // -*- C++ -*-
 //
+// modified from V0Fitter. It is a cmssw code used in RECO and AOD. To find mumutktk combinations.
+// It is fitting method 2 for vertexing.
+// This candidate is composed by mu + mu + TmpCand. with a constrain mumu with J/psi mass.
+// TmpCand is composed by tk + tk.
+// If constrain mass is smaller than 0. the constrain is disabled.
+// 
+// ############################## NOTICE #########################################################
+// The preselection is tktk - mumu vertex position need to LARGER than n_1 sigma.
+//          cosa2d from mumu to tktk LARGER than n_2.
+// ############################## NOTICE #########################################################
+//
+//
+//
 // modified from V0Fitter. It is a cmssw code used in RECO and AOD. To find Lambda0 and Kshort
 // Package:    V0Producer
 // Class:      V0Fitter
