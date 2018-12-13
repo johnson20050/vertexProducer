@@ -14,7 +14,7 @@ process.MessageLogger.cerr.FwkReport.reportEvery = 1000
 
 process.source = cms.Source("PoolSource",fileNames =
         cms.untracked.vstring(
-'file:recoBPHanalysis_withFilter.root'
+'file:vertexProducer_BdRemoved.root'
 #'file:///home/ltsai/Data/CRABdata/CRABdata_vertexProducer_2016RunF_30_11_2018/recoBPHanalysis_withFilter_1-1.root',
 #'file:///home/ltsai/Data/CRABdata/CRABdata_vertexProducer_2016RunF_30_11_2018/recoBPHanalysis_withFilter_1-2.root',
 #'file:///home/ltsai/Data/CRABdata/CRABdata_vertexProducer_2016RunF_30_11_2018/recoBPHanalysis_withFilter_1-3.root',

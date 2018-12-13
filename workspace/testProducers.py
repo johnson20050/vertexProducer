@@ -3,8 +3,8 @@ import FWCore.ParameterSet.Config as cms
 
 process = cms.Process("myVertexingProcedure")
 
-#process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(15800*2) )
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
+#process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(15800*2) )
 process.load("Configuration.Geometry.GeometryRecoDB_cff")
 process.load("Configuration.StandardSequences.MagneticField_cff")
 process.load('Configuration.StandardSequences.Services_cff')
@@ -23,29 +23,39 @@ process.options = cms.untracked.PSet( wantSummary = cms.untracked.bool(False) )
 process.options.allowUnscheduled = cms.untracked.bool(True)
 
 process.source = cms.Source("PoolSource",fileNames = cms.untracked.vstring(
-"file:///home/ltsai/Data/CMSSW_9_4_0/default/0294A5EC-3CED-E711-97F1-001E677925F0.root",
-"file:///home/ltsai/Data/CMSSW_9_4_0/default/0E6098A1-44ED-E711-AF56-A4BF011257F8.root",
-"file:///home/ltsai/Data/CMSSW_9_4_0/default/2C5196D0-44ED-E711-BEFE-A4BF0112BC8C.root",
-"file:///home/ltsai/Data/CMSSW_9_4_0/default/344E8E0F-45ED-E711-8C1A-001E67E6F922.root",
-"file:///home/ltsai/Data/CMSSW_9_4_0/default/3A6A42D5-44ED-E711-ABE2-A4BF0112BC8C.root",
-"file:///home/ltsai/Data/CMSSW_9_4_0/default/44F7A3AF-44ED-E711-8BCB-A4BF01125660.root",
-"file:///home/ltsai/Data/CMSSW_9_4_0/default/462D37C6-44ED-E711-BB4A-A4BF01158888.root",
-"file:///home/ltsai/Data/CMSSW_9_4_0/default/6C22CCAC-44ED-E711-8569-A4BF01125660.root",
-"file:///home/ltsai/Data/CMSSW_9_4_0/default/82AA92DC-3CED-E711-B076-A4BF0112BC8C.root",
-"file:///home/ltsai/Data/CMSSW_9_4_0/default/86F445C4-44ED-E711-A839-001E677928AA.root",
-"file:///home/ltsai/Data/CMSSW_9_4_0/default/A28CD840-45ED-E711-BDF0-001E67E6A166.root",
-"file:///home/ltsai/Data/CMSSW_9_4_0/default/B620BAD0-44ED-E711-BFC7-001E67E33C10.root",
-"file:///home/ltsai/Data/CMSSW_9_4_0/default/C6161A9D-44ED-E711-AFFC-001E67792890.root",
+#    'root://cms-se0.kipt.kharkov.ua//dpm/kipt.kharkov.ua/home/cms/store/data/Run2017B/Charmonium/AOD/17Nov2017-v1/50000/D2CE2C1E-F8EB-E711-8DCA-E0071B7AC5D0.root'
+    # 2016
+#'file:///afs/cern.ch/user/l/ltsai/ReceivedFile/DATA/CMSSW_8_0_28/Run2016G-07Aug17-v1/7EF6DB2A-14AF-E711-B529-0025905A6070.root'
+
+    #2017
+'file:///afs/cern.ch/user/l/ltsai/ReceivedFile/DATA/CMSSW_9_4_0/default/86F445C4-44ED-E711-A839-001E677928AA.root',
+'file:///afs/cern.ch/user/l/ltsai/ReceivedFile/DATA/CMSSW_9_4_0/default/B620BAD0-44ED-E711-BFC7-001E67E33C10.root',
 ),
         duplicateCheckMode = cms.untracked.string('noDuplicateCheck')
 )
 from Configuration.AlCa.GlobalTag_condDBv2 import GlobalTag
 #process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:run2_mc', '')
 process.GlobalTag = GlobalTag(process.GlobalTag, '94X_dataRun2_ReReco_EOY17_v1', '')
+#process.GlobalTag = GlobalTag(process.GlobalTag, '80X_dataRun2_2016LegacyRepro_v4', '')
 
-HLTName='HLT_DoubleMu4_3_Jpsi_Displaced_v*'
 from HLTrigger.HLTfilters.hltHighLevel_cfi import hltHighLevel
-process.hltHighLevel= hltHighLevel.clone(HLTPaths = cms.vstring(HLTName))
+## 2016 Triggers
+#process.hltHighLevel= hltHighLevel.clone(HLTPaths = cms.vstring(
+#    'HLT_Dimuon10_Jpsi_Barrel_v*',
+#    'HLT_Dimuon16_Jpsi_v*',
+#    'HLT_Dimuon20_Jpsi_v*',
+#    'HLT_DoubleMu4_3_Jpsi_Displaced_v*',
+#    'HLT_DoubleMu4_JpsiTrk_Displaced_v*',
+#    ))
+# 2017 Triggers
+process.hltHighLevel= hltHighLevel.clone(HLTPaths = cms.vstring(
+    'HLT_Dimuon20_Jpsi_Barrel_*',
+    'HLT_Dimuon25_Jpsi_v*',
+    'HLT_DoubleMu4_3_Jpsi_Displaced_v*',
+    'HLT_DoubleMu4_Jpsi_Displaced_v*',
+    'HLT_DoubleMu4_JpsiTrk_Displaced_v*',
+    #'HLT_DoubleMu4_JpsiTrkTrk_Displaced_v*',
+    ))
 
 # preselect pat muon and pat tracks
 process.load('vertexProducer.PreselectFilter.FilterConf9_cfi')
@@ -60,7 +70,7 @@ process.load('vertexProducer.vertexProducer.fourTracksFromVCCProducer_cfi')
 
 process.out = cms.OutputModule(
     "PoolOutputModule",
-    fileName = cms.untracked.string('recoBPHanalysis_withFilter.root'),
+    fileName = cms.untracked.string('vertexProducer_BdRemoved.root'),
     outputCommands = cms.untracked.vstring(
         "drop *",
         "keep *_mumuVertexingProducer_*_myVertexingProcedure",
