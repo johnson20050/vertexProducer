@@ -40,10 +40,9 @@ compCandAnalyzer::compCandAnalyzer(const edm::ParameterSet& iConfig)
         std::string  name = subConfigs[idx].getParameter<std::string>("candName");
         loaders[idx] = new ccLoader( subConfigs[idx], consumesCollector() );
         TFileDirectory tmpDir = fs->mkdir(subConfigs[idx].getParameter<std::string>("candName"));
-        tmpDir.make<TH1F>("dummyHist","", 10, 0., 10.);
         dirs.push_back( tmpDir );
 
-        loaders[idx]->setOutput( &dirs[idx] );
+        loaders[idx]->setOutput( &dirs.back() );
         loaders[idx]->createHistos();
     }
     return;
