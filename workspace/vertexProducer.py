@@ -66,6 +66,8 @@ process.out = cms.OutputModule(
     fileName = cms.untracked.string('recoBPHanalysis_withFilter_Data.root'),
     outputCommands = cms.untracked.vstring(
         "drop *",
+        "keep *_selectedMuons_MuonPreselectionBoolInt_myVertexingProcedure",
+        "keep *_selectedTracks_TrackPreselectionBoolInt_myVertexingProcedure",
         "keep *_mumuVertexingProducer_*_myVertexingProcedure",
         "keep *_tktkVertexingProducer_*_myVertexingProcedure",
         "keep *_generalV0Candidates_*_RECO",

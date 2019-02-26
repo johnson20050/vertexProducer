@@ -21,6 +21,8 @@ selectedPatMuons.cut = cms.string('muonID(\"TMOneStationTight\")'
 selectedMuons = cms.EDFilter(
     "MuonProducer",
     muonsrc = cms.InputTag("selectedPatMuons"),
+    mcmatchsrc = cms.InputTag('genParticles::HLT'),
+    useMC = cms.bool(False),
     )
 
 myMuonsSequence = cms.Sequence( selectedPatMuons * selectedMuons, makePatMuonsTask )
@@ -37,6 +39,8 @@ selectedTracks = cms.EDFilter(
     bssrc = cms.InputTag('offlineBeamSpot::RECO'),
     tracksrc = cms.InputTag("generalTracks::RECO"),
     muonsrc = cms.InputTag("selectedPatMuons"),
+    mcmatchsrc = cms.InputTag('genParticles::HLT'),
+    useMC = cms.bool(False),
 
     # cuts :
     # Select tracks using TrackBase::TrackQuality.
