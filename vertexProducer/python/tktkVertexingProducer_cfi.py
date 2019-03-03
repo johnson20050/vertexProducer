@@ -7,6 +7,8 @@ tktkVertexingProducer = cms.EDProducer("tktkVertexingProducer",
     #selTrackLabel = cms.InputTag('generalTracks'),
     beamspotLabel = cms.InputTag('offlineBeamSpot::RECO'),
     #beamspotLabel = cms.InputTag('offlineBeamSpot'),
+    genMatchLabel = cms.InputTag('genParticles::HLT'),
+    useMC = cms.bool(False),
 
     # set to true, uses tracks refit by the KVF for V0Candidate kinematics
     #  NOTE: useSmoothing is automatically set to FALSE

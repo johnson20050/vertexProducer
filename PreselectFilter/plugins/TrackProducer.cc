@@ -92,7 +92,7 @@ TrackProducer::TrackProducer(const edm::ParameterSet & iConfig):
     ownBfield(false), ownTkGeometry(false), ownBS(false)
 {
     produces < myTrackList > ();
-    produces<std::vector<int>>("TrackPreselectionBoolInt");
+    produces<std::vector<int>>("TrackPreselectionEfficiencyBoolInt");
     // Second, initialize post-fit cuts
     tkChi2Cut = iConfig.getParameter < double >("tkChi2Cut");
     tkNhitsCut = iConfig.getParameter < int >("tkNhitsCut");
@@ -166,7 +166,7 @@ recordCutArea:
 
 
     iEvent.put(std::move(selectedTracks));
-    iEvent.put(std::move(trackTriggerResult), "TrackPreselectionBoolInt");
+    iEvent.put(std::move(trackTriggerResult), "TrackPreselectionEfficiencyBoolInt");
     return true;
 }
 

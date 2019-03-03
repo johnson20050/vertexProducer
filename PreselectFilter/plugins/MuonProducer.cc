@@ -53,7 +53,7 @@ MuonProducer::MuonProducer(const edm::ParameterSet& iConfig):
    if ( _useMC )
       mcDaugDetail = new familyRelationShipLbToPcK();
 
-   produces<std::vector<int>>("MuonPreselectionBoolInt");
+   produces<std::vector<int>>("MuonPreselectionEfficiencyBoolInt");
    return;
 }
 
@@ -102,7 +102,7 @@ bool MuonProducer::filter( edm::Event& iEvent, const edm::EventSetup& iSetup)
 
     //unsigned keepEvent = selectedMuons->size();
     iEvent.put( std::move(selectedMuons) );
-    iEvent.put( std::move(muonTriggerResult), "MuonPreselectionBoolInt" );
+    iEvent.put( std::move(muonTriggerResult), "MuonPreselectionEfficiencyBoolInt" );
     
     //if ( keepEvent )
         return true;
@@ -116,6 +116,7 @@ bool MuonProducer::filter( edm::Event& iEvent, const edm::EventSetup& iSetup)
 bool MuonProducer::IsTargetMuon( const myMuon& mu ) const
 {
     if ( !_useMC ) return false;
+    if ( !_mcMatchHandle.isValid() ) return false;
 
     for ( const MCparticle& mc : *(_mcMatchHandle.product()) )
     {
@@ -171,7 +172,7 @@ bool MuonProducer::IsSelectedMuon( const myMuon& mu, int& cutRecord ) const
    if (!mu.innerTrack()->quality(reco::TrackBase::highPurity) ) return false;
    cutRecord += 1 << 12; // pass quality & final result
    if (mu.pt()<4.0)                                return false;
-   cutRecord += 1 << 13; // pass pt
+   cutRecord += 1 << 13; // pass pt & final result
    
    return true;
 }

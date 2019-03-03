@@ -40,12 +40,13 @@
 
 // Constructor and (empty) destructor
 mumuFitter::mumuFitter(const edm::ParameterSet & theParameters,
-                       edm::ConsumesCollector&& iC )
+                       edm::ConsumesCollector&& iC ) :
+    selMuonsToken( iC.consumes< myMuonList   >( theParameters.getParameter<edm::InputTag>("selMuonsLabel") ) ),
+    beamspotToken( iC.consumes<reco::BeamSpot>( theParameters.getParameter<edm::InputTag>("beamspotLabel") ) ),
+    genMatchToken( iC.consumes<MCparticleList>( theParameters.getParameter<edm::InputTag>("genMatchLabel") ) ),
+    _useMC( theParameters.getParameter<bool>("useMC") )
 {
     using std::string;
-    beamspotToken = iC.consumes<reco::BeamSpot>( theParameters.getParameter<edm::InputTag>("beamspotLabel") );
-    selMuonsToken = iC.consumes< myMuonList   >( theParameters.getParameter<edm::InputTag>("selMuonsLabel") );
-
 
     const std::vector < edm::ParameterSet > &pars =
         theParameters.getParameter < std::vector < edm::ParameterSet >> ("recoOptions");
@@ -96,9 +97,10 @@ mumuFitter::mumuFitter(const edm::ParameterSet & theParameters,
         optD[i][tktkMassCut]= subPar.getParameter < double > (string("tktkMassCut"));
         optD[i][vtxSigCut]  = subPar.getParameter < double > (string("vtxSignificance2DCut"));
     }
+    if ( _useMC )
+        mcDaugDetail = new familyRelationShipLbToPcK();
 
-
-
+    return;
 }
 
 mumuFitter::~mumuFitter()
@@ -119,6 +121,10 @@ mumuFitter::~mumuFitter()
     delete[] tmpContainerToTkTkCands;
     delete[] tktkCands;
     delete[] nCandsSize;
+
+    if ( _useMC )
+        delete mcDaugDetail;
+
     return;
 }
 
@@ -139,9 +145,9 @@ void mumuFitter::fitAll(const edm::Event & iEvent, const edm::EventSetup & iSetu
     std::vector < TransientTrack > theTransTracks;
 
     // Handles for tracks, B-field, and tracker geometry
-    //Handle<reco::TrackCollection> theTrackHandle;
     Handle <   myMuonList   > theMuonsHandle;
     Handle < reco::BeamSpot > theBeamSpotHandle;
+    Handle < MCparticleList > genMatchHandle;
 
 
 
@@ -151,12 +157,14 @@ void mumuFitter::fitAll(const edm::Event & iEvent, const edm::EventSetup & iSetu
 
     // Get the tracks from the event, and get the B-field record
     //  from the EventSetup
-   // iEvent.getByToken(selMuonsToken, theMuonsHandle);
-   // iEvent.getByToken(beamspotToken, theBeamSpotHandle);
     iEvent.getByToken(selMuonsToken, theMuonsHandle);
     iEvent.getByToken(beamspotToken, theBeamSpotHandle);
+    if ( _useMC )
+        iEvent.getByToken(genMatchToken, genMatchHandle);
     if (!theMuonsHandle->size()) return;
     if (!theBeamSpotHandle.isValid()) return;
+
+    cutRecordList.reserve(theMuonsHandle->size()*(theMuonsHandle->size()-1)/2+1);
     iSetup.get < IdealMagneticFieldRecord > ().get(bFieldHandle);
     iSetup.get < TrackerDigiGeometryRecord > ().get(trackerGeomHandle);
     iSetup.get < GlobalTrackingGeometryRecord > ().get(globTkGeomHandle);
@@ -176,12 +184,19 @@ void mumuFitter::fitAll(const edm::Event & iEvent, const edm::EventSetup & iSetu
     }
 
 
+    // 'isTarget' is to record this vertex pair is MC matched daughter pair.
+    // if yes, the 'curRecord' number will got a minus sign.
+    int isTarget = 1;
     // Loop over tracks and vertex good charged track pairs
     for (unsigned int trdx1 = 0; trdx1 < theTrackRefs.size(); trdx1++)
     {
 
-        for (unsigned int trdx2 = trdx1 + 1; trdx2 < theTrackRefs.size(); trdx2++)
+        for (unsigned int trdx2 = trdx1 + 1; trdx2 < theTrackRefs.size(); trdx2++, cutRecordList.back()*=isTarget)
         {
+            // Initialize
+            isTarget=1;
+            cutRecordList.push_back(0);
+            int& cutRecord = cutRecordList.back();
 
             //This vector holds the pair of oppositely-charged tracks to be vertexed
             std::vector < TransientTrack > transTracks;
@@ -217,32 +232,48 @@ void mumuFitter::fitAll(const edm::Event & iEvent, const edm::EventSetup & iSetu
             transTracks.push_back(*posTransTkPtr);
             transTracks.push_back(*negTransTkPtr);
 
-            // Trajectory states to calculate DCA for the 2 tracks
-            FreeTrajectoryState posState = posTransTkPtr->impactPointTSCP().theState();
-            FreeTrajectoryState negState = negTransTkPtr->impactPointTSCP().theState();
+            cutRecord += 1 << 1; // original number
 
-            if (!posTransTkPtr->impactPointTSCP().isValid() || !negTransTkPtr->impactPointTSCP().isValid())
-                continue;
+            // if MC target is found, let it to be -1. final result will be minus.
+            // or result is plus.
+            if ( _useMC )
+                if ( genMatchHandle.isValid() )
+                    if ( IsTargetPair(transTracks[0].track(), transTracks[1].track(), *(genMatchHandle.product())) )
+                        isTarget = -1;
 
-            // Measure distance between tracks at their closest approach
-            ClosestApproachInRPhi cApp;
-            cApp.calculate(posState, negState);
-            if (!cApp.status())
-                continue;
-            float dca = fabs(cApp.distance());
-            GlobalPoint cxPt = cApp.crossingPoint();
+ //           // Trajectory states to calculate DCA for the 2 tracks
+ //           FreeTrajectoryState posState = posTransTkPtr->impactPointTSCP().theState();
+ //           FreeTrajectoryState negState = negTransTkPtr->impactPointTSCP().theState();
 
-            if (dca < 0. || dca > tkDCACut)
-                continue;
-            if (sqrt(cxPt.x() * cxPt.x() + cxPt.y() * cxPt.y()) > 120. || std::abs(cxPt.z()) > 300.)
-                continue;
+ //           if (!posTransTkPtr->impactPointTSCP().isValid() || !negTransTkPtr->impactPointTSCP().isValid())
+ //               continue;
+ //           cutRecord += 1 << 3; // pos & neg free trajectory state valid
 
-            // Get trajectory states for the tracks at POCA for later cuts
-            TrajectoryStateClosestToPoint posTSCP = posTransTkPtr->trajectoryStateClosestToPoint(cxPt);
-            TrajectoryStateClosestToPoint negTSCP = negTransTkPtr->trajectoryStateClosestToPoint(cxPt);
+ //           // Measure distance between tracks at their closest approach
+ //           ClosestApproachInRPhi cApp;
+ //           cApp.calculate(posState, negState);
+ //           if (!cApp.status())
+ //               continue;
+ //           cutRecord += 1 << 4; // able to build closest approach state from two tracks
 
-            if (!posTSCP.isValid() || !negTSCP.isValid())
-                continue;
+ //           float dca = fabs(cApp.distance());
+ //           GlobalPoint cxPt = cApp.crossingPoint();
+
+ //           if (dca < 0. || dca > tkDCACut)
+ //               continue;
+ //           cutRecord += 1 << 5; // closest distance smaller than cut.
+
+ //           if (sqrt(cxPt.x() * cxPt.x() + cxPt.y() * cxPt.y()) > 120. || std::abs(cxPt.z()) > 300.)
+ //               continue;
+ //           cutRecord += 1 << 6; // the absolute position of crossing point is too large.
+
+ //           // Get trajectory states for the tracks at POCA for later cuts
+ //           TrajectoryStateClosestToPoint posTSCP = posTransTkPtr->trajectoryStateClosestToPoint(cxPt);
+ //           TrajectoryStateClosestToPoint negTSCP = negTransTkPtr->trajectoryStateClosestToPoint(cxPt);
+
+ //           if (!posTSCP.isValid() || !negTSCP.isValid())
+ //               continue;
+ //           cutRecord += 1 << 7; // able to build trajectory state closest to point of track-closestPoint.
 
 
             // Create the vertex fitter object and vertex the tracks
@@ -264,6 +295,8 @@ void mumuFitter::fitAll(const edm::Event & iEvent, const edm::EventSetup & iSetu
             {
                 continue;
             }
+            cutRecord += 1 << 9; // able to build reco vertex
+
             // Create reco::Vertex object for use in creating the Candidate
             reco::Vertex theVtx = theRecoVertex;
             // Create and fill vector of refitted TransientTracks
@@ -307,6 +340,8 @@ void mumuFitter::fitAll(const edm::Event & iEvent, const edm::EventSetup & iSetu
                     continue;
                 }
             }
+            cutRecord += 1 << 10; // posTkHitPosD2
+
             if (innerHitPosCut > 0. && negativeTrackRef->innerOk())
             {
                 reco::Vertex::Point negTkHitPos = negativeTrackRef->innerPosition();
@@ -319,11 +354,14 @@ void mumuFitter::fitAll(const edm::Event & iEvent, const edm::EventSetup & iSetu
                     continue;
                 }
             }
+            cutRecord += 1 << 11; // nesTkHisPosD2
 
             if (theVtx.normalizedChi2() > chi2Cut || rVtxMag < rVtxCut )
             {
                 continue;
             }
+            cutRecord += 1 << 12; // nChi2
+
             // Cuts finished, now we create the candidates and push them back into the collections.
 
             std::shared_ptr < TrajectoryStateClosestToPoint > trajPlus;
@@ -352,6 +390,8 @@ void mumuFitter::fitAll(const edm::Event & iEvent, const edm::EventSetup & iSetu
                 }
                 if (thePositiveRefTrack == 0 || theNegativeRefTrack == 0)
                     continue;
+                cutRecord += 1 << 13; // refTrack founded
+
                 trajPlus.reset(new
                                TrajectoryStateClosestToPoint(thePositiveRefTrack->trajectoryStateClosestToPoint
                                        (vtxPos)));
@@ -368,6 +408,7 @@ void mumuFitter::fitAll(const edm::Event & iEvent, const edm::EventSetup & iSetu
 
             if (trajPlus.get() == 0 || trajMins.get() == 0 || !trajPlus->isValid() || !trajMins->isValid())
                 continue;
+            cutRecord += 1 << 14; // able to get trajectory state closest to point.
 
             posTransTkPtr = negTransTkPtr = 0;
 
@@ -383,6 +424,8 @@ void mumuFitter::fitAll(const edm::Event & iEvent, const edm::EventSetup & iSetu
             for (unsigned idx = 0; idx < nParticles; ++idx)
             {
                 if (rVtxMag / sigmaRvtxMag < optD[idx][vtxSigCut]) continue;
+                if ( idx == 0 )
+                    cutRecord += 2 << 15; // fg sig cut
 
                 double pTkE = sqrt(positiveP.mag2() + optD[idx][pTkMass] * optD[idx][pTkMass]);
                 double nTkE = sqrt(negativeP.mag2() + optD[idx][nTkMass] * optD[idx][nTkMass]);
@@ -428,6 +471,8 @@ void mumuFitter::fitAll(const edm::Event & iEvent, const edm::EventSetup & iSetu
 
                 delete tktkCand;
                 tktkCand = nullptr;
+                if ( idx == 0 )
+                    cutRecord += 1 << 0; // final result
             } // build candidates end
         }
     } // tks loop end
@@ -441,17 +486,17 @@ const reco::VertexCompositeCandidateCollection& mumuFitter::getCands(unsigned i)
 {
     if ( !tktkCands )
     {
-        printf("tktkFitter::getCands() : no tktkCands returned, please check\n");
+        printf("mumuFitter::getCands() : no tktkCands returned, please check\n");
         exit(1);
     }
     if ( i >= nParticles ) 
     {
-        printf("tktkFitter::getCands() : input particle number bigger than tot number of particles!\n");
+        printf("mumuFitter::getCands() : input particle number bigger than tot number of particles!\n");
         exit(1);
     }
     if ( !tktkCands[i] )
     {
-        printf("tktkFitter::getCands() : no tktkCands returned, please check(2)\n");
+        printf("mumuFitter::getCands() : no tktkCands returned, please check(2)\n");
         exit(1);
     }
     return *(tktkCands[i]);
@@ -496,6 +541,40 @@ void mumuFitter::fillInContainer()
     }
     return;
 }
+
+bool mumuFitter::IsTargetPair(const myTrack& trk1, const myTrack& trk2, const MCparticleList& mcList )
+{
+    if ( !_useMC ) return false;
+
+    bool trk1Match = false;
+    bool trk2Match = false;
+    for ( const MCparticle& mc : mcList )
+    {
+        if ( fabs(mc.pdgId()) != 5122 ) continue;
+
+        const reco::Candidate* mcPtr = &mc;
+        const reco::Candidate* daugPtr = nullptr;
+        for ( int layerIdx = 0; layerIdx < mcDaugDetail->daugLayer(0); ++layerIdx )
+        {
+            daugPtr = mcPtr->daughter( mcDaugDetail->getDaughterIdxOnLayer(0,layerIdx) );
+            mcPtr = daugPtr;
+        }
+        if ( mcDaugDetail->truthMatching(trk1, *daugPtr) ) trk1Match = true;
+        if ( mcDaugDetail->truthMatching(trk2, *daugPtr) ) trk2Match = true;
+        mcPtr = &mc;
+        daugPtr = nullptr;
+        for ( int layerIdx = 0; layerIdx < mcDaugDetail->daugLayer(1); ++layerIdx )
+        {
+            daugPtr = mcPtr->daughter( mcDaugDetail->getDaughterIdxOnLayer(1,layerIdx) );
+            mcPtr = daugPtr;
+        }
+        if ( mcDaugDetail->truthMatching(trk1, *daugPtr) ) trk1Match = true;
+        if ( mcDaugDetail->truthMatching(trk2, *daugPtr) ) trk2Match = true;
+    }
+
+    return trk1Match && trk2Match;
+}
+
 void mumuFitter::clearSomething()
 {
     for ( unsigned i=0; i<nParticles; ++i )
@@ -508,5 +587,7 @@ void mumuFitter::clearSomething()
         tmpContainerToTkTkCands[i] = new reco::VertexCompositeCandidate[tmpContainerSize];
         tktkCands[i] = nullptr;
     }
+    cutRecordList.clear();
 
+    return;
 }

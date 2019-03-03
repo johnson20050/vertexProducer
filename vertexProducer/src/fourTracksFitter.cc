@@ -101,7 +101,7 @@ fourTracksFitter::fourTracksFitter(const edm::ParameterSet & theParameters,
     optD[MMassPreCut_mumu]       = theParameters.getParameter<double>("MMassPreCut_mumu");
     optD[mMassPreCut_tktk]       = theParameters.getParameter<double>("mMassPreCut_tktk");
     optD[MMassPreCut_tktk]       = theParameters.getParameter<double>("MMassPreCut_tktk");
-    
+    mcDaugDetail = new familyRelationShipLbToPcK();
     
     return;
 }
@@ -116,6 +116,8 @@ fourTracksFitter::~fourTracksFitter()
 
     delete[] tmpContainerToTkTkCands;
     delete tktkCands;
+
+    delete mcDaugDetail;
     printf("~fourTracksFitter end\n");
     return;
 }
@@ -153,6 +155,81 @@ void fourTracksFitter::fillInContainer()
         delete[] tmpContainerToTkTkCands;
         tmpContainerToTkTkCands = nullptr;
     return;
+}
+bool fourTracksFitter::IsTargetJPsi(const reco::Track& trk1, const reco::Track& trk2, const std::vector<reco::GenParticle>& mcList)
+{
+    if ( !useMC ) return false;
+
+    bool trk1Match = false;
+    bool trk2Match = false;
+    for ( const reco::GenParticle& mc : mcList )
+    {
+        if ( fabs(mc.pdgId()) != 5122 ) continue;
+
+        const reco::Candidate* mcPtr = &mc;
+        const reco::Candidate* daugPtr = nullptr;
+        for ( int layerIdx = 0; layerIdx < mcDaugDetail->daugLayer(0); ++layerIdx )
+        {
+            daugPtr = mcPtr->daughter( mcDaugDetail->getDaughterIdxOnLayer(0,layerIdx) );
+            mcPtr = daugPtr;
+        }
+        if ( mcPtr->mother()->pdgId() != 433 ) std::cout << "fourTracksFitter::IsTargetJPsi() ------ Warning, jpsi not found!------\n";
+
+        if ( mcDaugDetail->truthMatching(trk1, *daugPtr) ) trk1Match = true;
+        else
+        if ( mcDaugDetail->truthMatching(trk2, *daugPtr) ) trk2Match = true;
+
+
+        mcPtr = &mc;
+        daugPtr = nullptr;
+        for ( int layerIdx = 0; layerIdx < mcDaugDetail->daugLayer(1); ++layerIdx )
+        {
+            daugPtr = mcPtr->daughter( mcDaugDetail->getDaughterIdxOnLayer(1,layerIdx) );
+            mcPtr = daugPtr;
+        }
+        if ( mcPtr->mother()->pdgId() != 433 ) std::cout << "fourTracksFitter::IsTargetJPsi() ------ Warning, jpsi not found!------\n";
+
+        if ( mcDaugDetail->truthMatching(trk1, *daugPtr) ) trk1Match = true;
+        else
+        if ( mcDaugDetail->truthMatching(trk2, *daugPtr) ) trk2Match = true;
+    }
+
+    return trk1Match && trk2Match;
+}
+
+bool fourTracksFitter::IsTargetCand(const reco::Track& trk3, const reco::Track& trk4, const std::vector<reco::GenParticle>& mcList)
+{
+    if ( !useMC ) return false;
+
+    bool trk3Match = false;
+    bool trk4Match = false;
+    for ( const reco::GenParticle& mc : mcList )
+    {
+        if ( fabs(mc.pdgId()) != 5122 ) continue;
+
+        const reco::Candidate* mcPtr = &mc;
+        const reco::Candidate* daugPtr = nullptr;
+        for ( int layerIdx = 0; layerIdx < mcDaugDetail->daugLayer(2); ++layerIdx )
+        {
+            daugPtr = mcPtr->daughter( mcDaugDetail->getDaughterIdxOnLayer(2,layerIdx) );
+            mcPtr = daugPtr;
+        }
+        if ( mcDaugDetail->truthMatching(trk3, *daugPtr) ) trk3Match = true;
+        else
+        if ( mcDaugDetail->truthMatching(trk4, *daugPtr) ) trk4Match = true;
+        mcPtr = &mc;
+        daugPtr = nullptr;
+        for ( int layerIdx = 0; layerIdx < mcDaugDetail->daugLayer(3); ++layerIdx )
+        {
+            daugPtr = mcPtr->daughter( mcDaugDetail->getDaughterIdxOnLayer(3,layerIdx) );
+            mcPtr = daugPtr;
+        }
+        if ( mcDaugDetail->truthMatching(trk3, *daugPtr) ) trk3Match = true;
+        else
+        if ( mcDaugDetail->truthMatching(trk4, *daugPtr) ) trk4Match = true;
+    }
+
+    return trk3Match && trk4Match;
 }
 bool fourTracksFitter::overlap( const reco::RecoChargedCandidate& c1, const reco::RecoChargedCandidate& c2 )
 {
@@ -233,10 +310,14 @@ void fourTracksFitter::recordParingSources(const edm::Event & iEvent, const edm:
 
     iEvent.getByToken(mumuPairToken, *(theMuMuPairHandlePtr.get()));
     iEvent.getByToken(tktkPairToken, *(theTkTkPairHandlePtr.get()));
+    if ( useMC )
+    {
+        iEvent.getByToken(genMatchToken, *(theGenMatchHandlePtr.get()));
+    }
     iSetup.get < IdealMagneticFieldRecord > ().get(*(bFieldHandlePtr.get()));
     iSetup.get < GlobalTrackingGeometryRecord > ().get(*(globTkGeomHandlePtr.get()));
-    if (!(*theTkTkPairHandlePtr).isValid()) return;
     if (!(*theMuMuPairHandlePtr).isValid()) return;
+    if (!(*theTkTkPairHandlePtr).isValid()) return;
     if (!(*theMuMuPairHandlePtr)->size()) return;
     if (!(*theTkTkPairHandlePtr)->size()) return;
 
@@ -451,14 +532,17 @@ void fourTracksFitter::fillPair( unsigned mumuIdx, unsigned tktkIdx )
 }
 
 bool fourTracksFitter::recorded = false;
+bool fourTracksFitter::useMC = false;
 // Handles for tracks, B-field, and tracker geometry
 std::unique_ptr<edm::Handle<reco::BeamSpot                          >> fourTracksFitter::theBeamSpotHandlePtr;
 std::unique_ptr<edm::Handle<reco::VertexCompositeCandidateCollection>> fourTracksFitter::theMuMuPairHandlePtr;
 std::unique_ptr<edm::Handle<reco::VertexCompositeCandidateCollection>> fourTracksFitter::theTkTkPairHandlePtr;
+std::unique_ptr<edm::Handle<std::vector<reco::GenParticle>>          > fourTracksFitter::theGenMatchHandlePtr;
 std::unique_ptr<edm::ESHandle<GlobalTrackingGeometry>                > fourTracksFitter::globTkGeomHandlePtr;
 std::unique_ptr<edm::ESHandle<MagneticField>                         > fourTracksFitter::bFieldHandlePtr;
 edm::EDGetTokenT< reco::VertexCompositeCandidateCollection > fourTracksFitter::mumuPairToken;
 edm::EDGetTokenT< reco::VertexCompositeCandidateCollection > fourTracksFitter::tktkPairToken;
+edm::EDGetTokenT< std::vector<reco::GenParticle>           > fourTracksFitter::genMatchToken;
 edm::EDGetTokenT< reco::BeamSpot                           > fourTracksFitter::beamspotToken;
 std::vector<unsigned> fourTracksFitter::usedCandidateMuMu;
 std::vector<unsigned> fourTracksFitter::usedCandidateTkTk;

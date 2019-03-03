@@ -35,9 +35,16 @@ fourTracksFromVCCProducer::fourTracksFromVCCProducer(const edm::ParameterSet& iC
         = iConfig.getParameter < std::vector < edm::ParameterSet >> ("recoOptions");
     myFitter.reserve( subConfigs.size() );
     fourTracksFitter::initializeEvent( iConfig, consumesCollector() );
+    fourTracksFitter::UseMC( iConfig.getParameter<bool>("useMC") );
+
     for ( const auto& subConfig : subConfigs )
     {
-        produces< reco::VertexCompositeCandidateCollection >( subConfig.getParameter<std::string>("candName").c_str());
+        const std::string& candName = subConfig.getParameter<std::string>("candName");
+        char efficiencyName[60];
+        sprintf( efficiencyName, "fourTkVertexingEfficiencyBoolInt%s", candName.c_str() );
+        produces< std::vector<int> >( efficiencyName );
+        produces< reco::VertexCompositeCandidateCollection >(candName.c_str());
+
         switch ( subConfig.getParameter<int>("fittingMethod") )
         {
             case 1:
@@ -79,6 +86,16 @@ void fourTracksFromVCCProducer::produce(edm::Event& iEvent, const edm::EventSetu
     for ( const auto& fitter : myFitter )
     {
         fitter->fitAll( iEvent, iSetup );
+
+        // save efficiency in event
+        std::unique_ptr< std::vector<int> > triggerResult( new std::vector<int> );
+        const std::vector<int>&  trigRes = fitter->getCutResList();
+        triggerResult->reserve( trigRes.size() );
+        std::copy( trigRes.begin(), trigRes.end(), std::back_inserter(*triggerResult) );
+        
+        char efficiencyName[60];
+        sprintf( efficiencyName, "fourTkVertexingEfficiencyBoolInt%s", fitter->getFourTkCandName().c_str() );
+        iEvent.put( std::move(triggerResult), efficiencyName );
     }
 
     for ( const auto& fittingRes : myFitter )
@@ -121,6 +138,8 @@ void fourTracksFromVCCProducer::fillDescriptions( edm::ConfigurationDescriptions
     desc.add<edm::InputTag>("beamspotLabel", edm::InputTag(""));
     desc.add<edm::InputTag>("tktkCandLabel", edm::InputTag(""));
     desc.add<edm::InputTag>("mumuCandLabel", edm::InputTag(""));
+    desc.add<edm::InputTag>("genMatchLabel", edm::InputTag(""));
+    desc.add<bool>("useMC", false);
 
     edm::ParameterSetDescription dpar;
     dpar.add<int>( "fittingMethod", 0 );

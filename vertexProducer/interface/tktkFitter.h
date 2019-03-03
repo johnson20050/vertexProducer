@@ -55,8 +55,12 @@
 #include <fstream>
 #include <stdio.h>
 
+#include "vertexProducer/MCMatchTools/interface/familyRelationShipLbToPcK.h"
+
 typedef reco::Track myTrack;
 typedef std::vector<myTrack> myTrackList;
+typedef reco::GenParticle MCparticle;
+typedef std::vector<reco::GenParticle> MCparticleList;
 
 class tktkFitter
 {
@@ -67,6 +71,7 @@ public:
 
     // Switching to L. Lista's reco::Candidate infrastructure for V0 storage
     const reco::VertexCompositeCandidateCollection& getCands(unsigned i) const;
+    const std::vector<int>& getCutResList() const { return cutRecordList; }
 
 private:
     // STL vector of VertexCompositeCandidate that will be filled with VertexCompositeCandidates by fitAll()
@@ -77,6 +82,8 @@ private:
     reco::VertexCompositeCandidate** tmpContainerToTkTkCands;
     void enlargeAllContainer();
     void fillInContainer();
+    bool IsTargetPair(const myTrack& trk1, const myTrack& trk2, const MCparticleList& mcList );
+    familyRelationShip* mcDaugDetail;
 
     // size to tmp container. If the number of candidates spill out the tmp contaier, it need to find larger container automatically.
     unsigned* nCandsSize;
@@ -89,11 +96,14 @@ private:
 
     edm::EDGetTokenT< myTrackList    > selTrackToken;
     edm::EDGetTokenT< reco::BeamSpot > beamspotToken;
+    edm::EDGetTokenT< MCparticleList > genMatchToken;
+    bool _useMC;
 
     // variables to be decided from python file
     double** optD;
     bool**   optB;
     std::string** optS;
+    std::vector<int> cutRecordList;
     unsigned nParticles;
 
     double chi2Cut, rVtxCut, tkDCACut, innerHitPosCut;

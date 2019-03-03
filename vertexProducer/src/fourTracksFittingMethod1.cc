@@ -22,6 +22,12 @@ void fourTracksFittingMethod1::fitAll(const edm::Event & iEvent, const edm::Even
 	const reco::VertexCompositeCandidateCollection& tktkCands = *(theTkTkPairHandlePtr->product());
 	const MagneticField* magField = bFieldHandlePtr->product();
 	const edm::ESHandle<GlobalTrackingGeometry>& globTkGeomHandle = *(globTkGeomHandlePtr.get());
+    if ( mumuCands.size() > 1 ) return; // lowering combinatorial background.
+
+    cutRecordList.clear();
+    cutRecordList.reserve(mumuCands.size()*tktkCands.size()+1);
+
+    int isTarget = 1;
 
 	// load mumuCandidate & tktkCandidate to do the vertexing
 	for ( unsigned mumuIdx = 0; mumuIdx != mumuCands.size(); ++mumuIdx )
@@ -30,10 +36,10 @@ void fourTracksFittingMethod1::fitAll(const edm::Event & iEvent, const edm::Even
 		const reco::RecoChargedCandidate* muPosCandPtr = dynamic_cast<const reco::RecoChargedCandidate*>( mumuCand.daughter("MuPos") );
 		const reco::RecoChargedCandidate* muNegCandPtr = dynamic_cast<const reco::RecoChargedCandidate*>( mumuCand.daughter("MuNeg") );
 
-		for ( unsigned tktkIdx = 0; tktkIdx != tktkCands.size(); ++tktkIdx )
-
-		//for ( int tktkIdx = 0; tktkIdx < tktkCands.size(); ++tktkIdx )
+		for ( unsigned tktkIdx = 0; tktkIdx != tktkCands.size(); ++tktkIdx, cutRecordList.back()*=isTarget )
 		{
+            isTarget = 1;
+
 			if ( fourTracksFitter::usedPair(mumuIdx, tktkIdx) ) continue;
 			const reco::VertexCompositeCandidate& tktkCand = tktkCands[tktkIdx];
 			const reco::RecoChargedCandidate* tkPosCandPtr = dynamic_cast<const reco::RecoChargedCandidate*>( tktkCand.daughter("PiPos") );
@@ -62,8 +68,6 @@ void fourTracksFittingMethod1::fitAll(const edm::Event & iEvent, const edm::Even
 			if ( tktkPreSelP4.M() < optD[mMassPreCut_tktk] ) continue;
 			if ( tktkPreSelP4.M() > optD[MMassPreCut_tktk] ) continue;
 
-			// preselections end
-
 			// build trackRef & TransientTracks
 			reco::TrackRef muPosTkRef = muPosCandPtr->track();
 			reco::TrackRef muNegTkRef = muNegCandPtr->track();
@@ -74,6 +78,17 @@ void fourTracksFittingMethod1::fitAll(const edm::Event & iEvent, const edm::Even
 			reco::TransientTrack muNegTransTk( *muNegTkRef, magField, globTkGeomHandle );
 			reco::TransientTrack tkPosTransTk( *tkPosTkRef, magField, globTkGeomHandle );
 			reco::TransientTrack tkNegTransTk( *tkNegTkRef, magField, globTkGeomHandle );
+
+
+            cutRecordList.push_back(0);
+            int& cutRecord = cutRecordList.back();
+            cutRecord += 1 << 1;
+			// preselections end
+            if ( useMC )
+                if ( theGenMatchHandlePtr->isValid() )
+                    if ( IsTargetJPsi(muPosTransTk.track(), muNegTransTk.track(), *(theGenMatchHandlePtr->product())) )
+                        if ( IsTargetCand(tkPosTransTk.track(), tkNegTransTk.track(), *(theGenMatchHandlePtr->product())) )
+                        isTarget = -1;
 
 			// for check
 			GlobalPoint tktkVTX ( tktkCand.vertex().x(),tktkCand.vertex().y(), tktkCand.vertex().z() );
@@ -86,6 +101,7 @@ void fourTracksFittingMethod1::fitAll(const edm::Event & iEvent, const edm::Even
 			//printf("muPos : %f , muNeg : %f , tkPos : %f , tkNeg : %f \n", mpMom.mag(), mnMom.mag(), tpMom.mag(), tnMom.mag() );
 			if ( fabs(mpMom.mag()-tpMom.mag()) < 0.001 ) continue;
 			if ( fabs(mnMom.mag()-tnMom.mag()) < 0.001 ) continue;
+            cutRecord += 1 << 3;
 
 			KinematicParticleFactoryFromTransientTrack pFactory;
 			std::vector<RefCountedKinematicParticle> mumutktkCand;
@@ -112,17 +128,19 @@ void fourTracksFittingMethod1::fitAll(const edm::Event & iEvent, const edm::Even
 				fourTracksKineTree = kpvFitter.fit( mumutktkCand );
 			}
 			if ( !fourTracksKineTree->isValid() ) continue;
+            cutRecord += 1 << 4;
 			fourTracksKineTree->movePointerToTheTop();
 
-			//std::cout << "method1. 01.46\n";
 
 			// start to fill in result.
 			RefCountedKinematicParticle candKineParticle = fourTracksKineTree->currentParticle();
 			RefCountedKinematicVertex candKineVertex   = fourTracksKineTree->currentDecayVertex();
 			if ( !candKineVertex->vertexIsValid() ) continue;
+            cutRecord += 1 << 5;
 
 			double vtxProb = TMath::Prob( candKineVertex->chiSquared(), candKineVertex->degreesOfFreedom() );
 			if ( vtxProb < optD[vtxprobCut] ) continue;
+            cutRecord += 1 << 6;
 
 			// information to final partifcle.
 			const reco::Particle::LorentzVector candP4(
@@ -197,8 +215,8 @@ void fourTracksFittingMethod1::fitAll(const edm::Event & iEvent, const edm::Even
 			reco::VertexCompositeCandidate* fourTkCand =
 			    new reco::VertexCompositeCandidate(0, candP4, vtx, vtxCov, vtxChi2, vtxNdof);
 
-			fourTkCand->addDaughter( MuMuCand, optS[mumuName] );
-			fourTkCand->addDaughter( TkTkCand, optS[tktkName] );
+			fourTkCand->addDaughter( MuMuCand,optS[mumuName] );
+			fourTkCand->addDaughter( TkTkCand,optS[tktkName] );
 			fourTkCand->setPdgId(5122);
 			addp4.set(*fourTkCand);
 
@@ -209,6 +227,7 @@ void fourTracksFittingMethod1::fitAll(const edm::Event & iEvent, const edm::Even
 				enlargeContainer();
 			delete fourTkCand;
 			fourTkCand = nullptr;
+            cutRecord += 1 << 0;
 		}	// tktkPair loop end
 	}	// mumuPair loop end
 

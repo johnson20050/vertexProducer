@@ -68,6 +68,8 @@
 #include <stdio.h>
 #include <memory>
 
+#include "vertexProducer/MCMatchTools/interface/familyRelationShipLbToPcK.h"
+
 class fourTracksFitter
 {
 public:
@@ -87,6 +89,9 @@ protected:
     reco::VertexCompositeCandidate* tmpContainerToTkTkCands;
     void enlargeContainer();
     void fillInContainer();
+    bool IsTargetJPsi(const reco::Track& trk1, const reco::Track& trk2, const std::vector<reco::GenParticle>& mcList);
+    bool IsTargetCand(const reco::Track& trk3, const reco::Track& trk4, const std::vector<reco::GenParticle>& mcList);
+    familyRelationShip* mcDaugDetail;
 
     // size to tmp container. If the number of candidates spill out the tmp contaier, it need to find larger container automatically.
     unsigned nCandsSize;
@@ -102,6 +107,7 @@ protected:
     double chi2Cut, rVtxCut, tkDCACut, innerHitPosCut;
     bool useRefTrax;
     std::string vtxFitter;
+    std::vector<int> cutRecordList;
 
     enum parD
     {
@@ -125,12 +131,15 @@ protected:
     };
 
     static bool recorded;
+    static bool useMC;
     static edm::EDGetTokenT<reco::VertexCompositeCandidateCollection> mumuPairToken;
     static edm::EDGetTokenT<reco::VertexCompositeCandidateCollection> tktkPairToken;
     static edm::EDGetTokenT<reco::BeamSpot                          > beamspotToken;
+    static edm::EDGetTokenT< std::vector<reco::GenParticle>         > genMatchToken;
     static std::unique_ptr<edm::Handle<reco::BeamSpot>                          > theBeamSpotHandlePtr;
     static std::unique_ptr<edm::Handle<reco::VertexCompositeCandidateCollection>> theMuMuPairHandlePtr;
     static std::unique_ptr<edm::Handle<reco::VertexCompositeCandidateCollection>> theTkTkPairHandlePtr;
+    static std::unique_ptr<edm::Handle<std::vector<reco::GenParticle>>          > theGenMatchHandlePtr;
     static std::unique_ptr<edm::ESHandle<MagneticField>                         > bFieldHandlePtr;
     static std::unique_ptr<edm::ESHandle<GlobalTrackingGeometry>                > globTkGeomHandlePtr;
 
@@ -147,11 +156,13 @@ public:
     static void clearRecoredSources();
     static void excludeKnownParticles( const edm::Event& iEvent, const edm::EventSetup& iSetup );
     static bool overlap( const reco::RecoChargedCandidate& c1, const reco::RecoChargedCandidate& c2 );
+    static void UseMC(bool input) { useMC = input; return; }
     
 
     // Helper method that does the actual fitting using the KalmanVertexFitter
     virtual void fitAll(const edm::Event& iEvent, const edm::EventSetup& iSetup) = 0;
 
+    const std::vector<int>& getCutResList() const { return cutRecordList; }
     std::string getFourTkCandName() { return optS[candName]; }
     bool nothingToWritten() { return nCandsSize == 0 ? true : false; }
     void clearAndInitializeContainer();

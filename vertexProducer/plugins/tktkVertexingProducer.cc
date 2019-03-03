@@ -28,12 +28,12 @@
 tktkVertexingProducer::tktkVertexingProducer(const edm::ParameterSet& iConfig) :
     tktkFitting( iConfig, consumesCollector() )
 {
-
     // Registering V0 Collections
     const std::vector< edm::ParameterSet >& subConfigs
         = iConfig.getParameter < std::vector < edm::ParameterSet >> ("recoOptions");
     for ( const auto& subConfig : subConfigs )
         produces< reco::VertexCompositeCandidateCollection >( subConfig.getParameter<std::string>("candName").c_str());
+    produces< std::vector<int> >( "tktkVertexingEfficiencyBoolInt" );
 
     return;
 }
@@ -58,13 +58,19 @@ void tktkVertexingProducer::produce(edm::Event& iEvent, const edm::EventSetup& i
     tktkFitting.fitAll(iEvent, iSetup);
 
 
+    std::unique_ptr< std::vector<int> > tktkTriggerResult( new std::vector<int> );
+    const std::vector<int>&  trigRes = tktkFitting.getCutResList();
+    tktkTriggerResult->reserve( trigRes.size() );
+    std::copy( trigRes.begin(), trigRes.end(), std::back_inserter(*tktkTriggerResult) );
+    iEvent.put( std::move(tktkTriggerResult), "tktkVertexingEfficiencyBoolInt" );
+
     for ( unsigned i = 0; i < tktkFitting.getNParticles(); ++i )
     {
 
         // Create shared_ptr for each collection to be stored in the Event
         //std::shared_ptr< reco::VertexCompositeCandidateCollection >
         std::unique_ptr< reco::VertexCompositeCandidateCollection >
-        tktkCandList( new reco::VertexCompositeCandidateCollection );
+            tktkCandList( new reco::VertexCompositeCandidateCollection );
         if ( tktkFitting.nothingToWritten(i) )
         {
             iEvent.put( std::move(tktkCandList), tktkFitting.getCandName(i) );
@@ -78,6 +84,7 @@ void tktkVertexingProducer::produce(edm::Event& iEvent, const edm::EventSetup& i
         // Write the collections to the Event
         iEvent.put( std::move(tktkCandList), tktkFitting.getCandName(i) );
     }
+
 
     return;
 }

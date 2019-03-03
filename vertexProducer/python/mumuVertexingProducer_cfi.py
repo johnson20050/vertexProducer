@@ -5,6 +5,8 @@ mumuVertexingProducer = cms.EDProducer("mumuVertexingProducer",
     # InputTag that tells which TrackCollection to use for vertexing
     selMuonsLabel = cms.InputTag('selectedMuons'),
     beamspotLabel = cms.InputTag('offlineBeamSpot::RECO'),
+    genMatchLabel = cms.InputTag('genParticles::HLT'),
+    useMC = cms.bool(False),
 
     # set to true, uses tracks refit by the KVF for V0Candidate kinematics
     #  NOTE: useSmoothing is automatically set to FALSE
