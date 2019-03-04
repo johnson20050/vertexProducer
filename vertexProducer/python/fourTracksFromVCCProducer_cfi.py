@@ -1,8 +1,8 @@
 import FWCore.ParameterSet.Config as cms
 
 fourTracksFromVCCProducer = cms.EDProducer("fourTracksFromVCCProducer",
-    tktkCandLabel = cms.InputTag('tktkVertexingProducer:generalTkPair:myFourTracksVertexingProcedure'),
-    mumuCandLabel = cms.InputTag('mumuVertexingProducer:JPsi:myFourTracksVertexingProcedure'),
+    tktkCandLabel = cms.InputTag('tktkVertexingProducer:generalTkPair:myVertexingProcedure'),
+    mumuCandLabel = cms.InputTag('mumuVertexingProducer:JPsi:myVertexingProcedure'),
     beamspotLabel = cms.InputTag('offlineBeamSpot::RECO'),
     genMatchLabel = cms.InputTag('genParticles::HLT'),
             useMC = cms.bool(False),

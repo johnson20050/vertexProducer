@@ -1,7 +1,7 @@
 #!/usr/bin/env cmsRun
 import FWCore.ParameterSet.Config as cms
 
-process = cms.Process("myFourTracksVertexingProcedure")
+process = cms.Process("myVertexingProcedure")
 
 process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
 #process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(30000) )
@@ -4048,13 +4048,13 @@ process.out = cms.OutputModule(
     fileName = cms.untracked.string('reco_fourTracksVertexing.root'),
     outputCommands = cms.untracked.vstring(
         "drop *",
-        "keep *_mumuVertexingProducer_*_myFourTracksVertexingProcedure",
-        "keep *_tktkVertexingProducer_*_myFourTracksVertexingProcedure",
-        "keep *_selectedMuons_MuonPreselectionEfficiencyBoolInt_myFourTracksVertexingProcedure",
-        "keep *_selectedTracks_TrackPreselectionEfficiencyBoolInt_myFourTracksVertexingProcedure",
-        "keep *_tktkVertexingProducer_tktkVertexingEfficiencyBoolInt_myFourTracksVertexingProcedure",
-        "keep *_mumuVertexingProducer_mumuVertexingEfficiencyBoolInt_myFourTracksVertexingProcedure",
-        "keep *_*_*_myFourTracksVertexingProcedure",
+        "keep *_mumuVertexingProducer_*_myVertexingProcedure",
+        "keep *_tktkVertexingProducer_*_myVertexingProcedure",
+        "keep *_fourTracksFromVCCProducer_*_myVertexingProcedure",
+        "keep *_selectedMuons_MuonPreselectionEfficiencyBoolInt_myVertexingProcedure",
+        "keep *_selectedTracks_TrackPreselectionEfficiencyBoolInt_myVertexingProcedure",
+        "keep *_tktkVertexingProducer_tktkVertexingEfficiencyBoolInt_myVertexingProcedure",
+        "keep *_mumuVertexingProducer_mumuVertexingEfficiencyBoolInt_myVertexingProcedure",
         "keep *_generalV0Candidates_*_RECO",
         "keep *_offlineBeamSpot_*_RECO",
         "keep *_offlinePrimaryVertices_*_RECO",
