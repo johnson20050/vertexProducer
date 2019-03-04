@@ -252,12 +252,14 @@ void fourTracksFittingMethod3::fitAll(const edm::Event & iEvent, const edm::Even
 
             if ( fourTkCand->mass() > optD[mCandMassCut] &&
                  fourTkCand->mass() < optD[MCandMassCut] )
+            {
                 tmpContainerToTkTkCands[nCandsSize++] = *fourTkCand;
+                cutRecord += 1 << 0;
+            }
             if ( nCandsSize == tmpContainerSize )
                 enlargeContainer();
             delete fourTkCand;
             fourTkCand = nullptr;
-            cutRecord += 1 << 0;
         } // tktkPair loop end
     } // mumuPair loop end
 

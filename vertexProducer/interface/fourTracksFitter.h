@@ -157,6 +157,7 @@ public:
     static void excludeKnownParticles( const edm::Event& iEvent, const edm::EventSetup& iSetup );
     static bool overlap( const reco::RecoChargedCandidate& c1, const reco::RecoChargedCandidate& c2 );
     static void UseMC(bool input) { useMC = input; return; }
+    static bool ownMuMuPair() { return theMuMuPairHandlePtr->isValid() ? (*theMuMuPairHandlePtr)->size()!=0 : false; }
     
 
     // Helper method that does the actual fitting using the KalmanVertexFitter

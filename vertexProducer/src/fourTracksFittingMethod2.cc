@@ -88,7 +88,7 @@ void fourTracksFittingMethod2::fitAll(const edm::Event & iEvent, const edm::Even
                 if ( theGenMatchHandlePtr->isValid() )
                     if ( IsTargetJPsi(muPosTransTk.track(), muNegTransTk.track(), *(theGenMatchHandlePtr->product())) )
                         if ( IsTargetCand(tkPosTransTk.track(), tkNegTransTk.track(), *(theGenMatchHandlePtr->product())) )
-                        isTarget = -1;
+                            isTarget = -1;
 
 			// for check
 			GlobalPoint tktkVTX ( tktkCand.vertex().x(),tktkCand.vertex().y(), tktkCand.vertex().z() );
@@ -218,12 +218,14 @@ void fourTracksFittingMethod2::fitAll(const edm::Event & iEvent, const edm::Even
 
 			if ( fourTkCand->mass() > optD[mCandMassCut] &&
 			    fourTkCand->mass() < optD[MCandMassCut] )
+            {
 				tmpContainerToTkTkCands[nCandsSize++] = *fourTkCand;
+                cutRecord += 1 << 0;
+            }
 			if ( nCandsSize == tmpContainerSize )
 				enlargeContainer();
 			delete fourTkCand;
 			fourTkCand = nullptr;
-            cutRecord += 1 << 0;
 		}	// tktkPair loop end
 	}	// mumuPair loop end
 

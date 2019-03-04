@@ -37,6 +37,7 @@ fourTracksFromVCCProducer::fourTracksFromVCCProducer(const edm::ParameterSet& iC
     fourTracksFitter::initializeEvent( iConfig, consumesCollector() );
     fourTracksFitter::UseMC( iConfig.getParameter<bool>("useMC") );
 
+    produces<int>( "fourTracksTotallyVertexingEfficiency" );
     for ( const auto& subConfig : subConfigs )
     {
         const std::string& candName = subConfig.getParameter<std::string>("candName");
@@ -79,8 +80,13 @@ void fourTracksFromVCCProducer::produce(edm::Event& iEvent, const edm::EventSetu
 {
     using namespace edm;
 
+    std::unique_ptr<int> vertexEfficiency( new int(0) );
+
+    int fMethod = 0;
     fourTracksFitter::clearRecoredSources();
     fourTracksFitter::recordParingSources( iEvent, iSetup );
+    if ( fourTracksFitter::ownMuMuPair() )
+        *vertexEfficiency += 1 << 0;
     fourTracksFitter::excludeKnownParticles( iEvent, iSetup );
     // Create V0Fitter object which reconstructs the vertices and creates
     for ( const auto& fitter : myFitter )
@@ -90,6 +96,7 @@ void fourTracksFromVCCProducer::produce(edm::Event& iEvent, const edm::EventSetu
         // save efficiency in event
         std::unique_ptr< std::vector<int> > triggerResult( new std::vector<int> );
         const std::vector<int>&  trigRes = fitter->getCutResList();
+            
         triggerResult->reserve( trigRes.size() );
         std::copy( trigRes.begin(), trigRes.end(), std::back_inserter(*triggerResult) );
         
@@ -100,6 +107,7 @@ void fourTracksFromVCCProducer::produce(edm::Event& iEvent, const edm::EventSetu
 
     for ( const auto& fittingRes : myFitter )
     {
+        ++fMethod;
 
         // Create shared_ptr for each collection to be stored in the Event
         std::unique_ptr< reco::VertexCompositeCandidateCollection >
@@ -115,7 +123,10 @@ void fourTracksFromVCCProducer::produce(edm::Event& iEvent, const edm::EventSetu
 
         // Write the collections to the Event
         iEvent.put( std::move(fourTksCandList), fittingRes->getFourTkCandName() );
+
+        *vertexEfficiency += 1 << fMethod;
     }
+    iEvent.put( std::move(vertexEfficiency), "fourTracksTotallyVertexingEfficiency");
 
 
     fourTracksFitter::clearEvent();
