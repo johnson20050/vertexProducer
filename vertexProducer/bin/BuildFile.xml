@@ -9,6 +9,6 @@
 <use   name="PhysicsTools/FWLite"/>
 <use   name="PhysicsTools/Utilities"/>
 <use   name="PhysicsTools/SelectorUtils"/>
-<use   name="histProduce/histProduce"/>
 <environment>
+    <bin name="vtxEff" file="FWLiteEfficiencyReader.cc"></bin>
 </environment>

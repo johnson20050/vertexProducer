@@ -5,11 +5,12 @@ import ROOT
 from DataFormats.FWLite import Events, Handle
 
 #events=Events('reco_fourTracksVertexing.root')
-events=Events('reco_final.root')
+#events=Events('reco_final.root')
+events=Events('reco_fourTracksVertexing_9.root')
 #events=Events('reco_test.root')
 #events=Events('ta.root')
 handle=Handle('vector<reco::VertexCompositeCandidate>')
-label=('fourTracksFromVCCProducer:pL0B:myFourTracksVertexingProcedure')
+label=('fourTracksFromVCCProducer:pL0B:myVertexingProcedure')
 
 # don't pop up canvases
 ROOT.gROOT.SetBatch()

@@ -43,8 +43,11 @@ fourTracksFromVCCProducer = cms.EDProducer("fourTracksFromVCCProducer",
             # selection after vertexing
             # FDSigCut_mumutktkToBS  = cms.double(2.9),
             # vtxprobCut             = cms.double(0.005),
-            mCandMassCut           = cms.double(5.4),
-            MCandMassCut           = cms.double(5.9),
+            # just for test
+            mCandMassCut           = cms.double(4.0),
+            MCandMassCut           = cms.double(8.0),
+            #mCandMassCut           = cms.double(5.4),
+            #MCandMassCut           = cms.double(5.9),
 
 
             # selection before vertexing

@@ -4,11 +4,13 @@
 #include <sstream>
 #include <fstream>
 #include <iostream>
+#include <math.h>
 
 #include <TH1D.h>
 #include <TROOT.h>
 #include <TFile.h>
 #include <TSystem.h>
+#include <TCanvas.h>
 
 #include "FWCore/FWLite/interface/AutoLibraryLoader.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
@@ -64,140 +66,85 @@ int main(int argc, char* argv[])
     catch ( const char* e )
     { printf( "%s", e ); }
     // check default path end }}}
-
-    // parser setting {{{
-    // initialize command line parser
-    optutl::CommandLineParser parser ("Analyze FWLite Histograms");
-
-    parser.addOption("testFile",optutl::CommandLineParser::kString,"test input file, recommend to use fileList_cfi.py to put files","");
-    parser.addOption("fileList",optutl::CommandLineParser::kString,"input the python file records file list.","fileList");
-    // set defaults for testFile is assigned
-    parser.stringValue  ("outputFile" ) = "efficiencyResult.root";
-
-    // parse arguments
-    parser.parseArguments (argc, argv);
-
-    // deal with python file path
-    const std::string configFile = parser.stringValue("configFile");
-    const std::string listFile   = parser.stringValue("fileList");
-    const std::string dPath      = "/src/vertexProducer/vertexProducer/python/";
-    const std::string confPython = sysPath+dPath+configFile+"_cfi.py";
-    const std::string fOptPython = sysPath+dPath+listFile+"_cfi.py";
-    // load IO option from python file. default is fileList_cfi.py
-    const edm::ParameterSet& ioOption = edm::readPSetsFrom(fOptPython.c_str())->getParameter<edm::ParameterSet>("process");
-    const edm::ParameterSet& runSetting = ioOption.getParameter<edm::ParameterSet>("runSetting");
-    const edm::ParameterSet& inputFileNames = ioOption.getParameter<edm::ParameterSet>("inputFiles");
-    const std::vector<std::string>& fileNames = inputFileNames.getParameter< std::vector<std::string> >("fileNames");
-    unsigned outputEvery_   = runSetting.getParameter<unsigned>("outEvery");
-    std::string outputFile_ = runSetting.getParameter<std::string>("outName");
-
-    // load cut configuration from python file. default is histogramCutParameter_cfi.py
-    //const edm::ParameterSet& cutOption = edm::readPSetsFrom(confPython.c_str())->getParameter<edm::ParameterSet>("process");
-    //const std::vector<edm::ParameterSet>& runSetting_ = cutOption.getParameter< std::vector<edm::ParameterSet> >("cutSet");
-    // parser setting end }}}
-
-    // input files
-    std::vector<std::string> inputFiles_;
-
-    // if inputFile not set, use python file : fileList_cfi.py
-    if ( parser.stringValue("testFile").empty() )
-        inputFiles_ = fileNames;
-    else
-    {
-        // only if testFile is set, parameters from parser valid
-        inputFiles_.push_back( parser.stringValue("testFile") );
-        outputFile_ = parser.stringValue("outputFile");
-        maxEvents_ = parser.integerValue("maxEvents");
-        outputEvery_ = parser.integerValue("outputEvery");
-    }
+//
+//    // parser setting {{{
+//    // initialize command line parser
+//    optutl::CommandLineParser parser ("Analyze FWLite Histograms");
+//
+//    parser.addOption("testFile",optutl::CommandLineParser::kString,"test input file, recommend to use fileList_cfi.py to put files","");
+//    parser.addOption("fileList",optutl::CommandLineParser::kString,"input the python file records file list.","fileList");
+//    // set defaults for testFile is assigned
+//    parser.stringValue  ("outputFile" ) = "efficiencyResult.root";
+//
+//    // parse arguments
+//    parser.parseArguments (argc, argv);
+//
+//    // deal with python file path
+//    const std::string configFile = parser.stringValue("configFile");
+//    const std::string listFile   = parser.stringValue("fileList");
+//    const std::string dPath      = "/src/vertexProducer/vertexProducer/python/";
+//    const std::string confPython = sysPath+dPath+configFile+"_cfi.py";
+//    const std::string fOptPython = sysPath+dPath+listFile+"_cfi.py";
+//    // load IO option from python file. default is fileList_cfi.py
+//    const edm::ParameterSet& ioOption = edm::readPSetsFrom(fOptPython.c_str())->getParameter<edm::ParameterSet>("process");
+//    const edm::ParameterSet& runSetting = ioOption.getParameter<edm::ParameterSet>("runSetting");
+//    const edm::ParameterSet& inputFileNames = ioOption.getParameter<edm::ParameterSet>("inputFiles");
+//    const std::vector<std::string>& fileNames = inputFileNames.getParameter< std::vector<std::string> >("fileNames");
+//    unsigned outputEvery_   = runSetting.getParameter<unsigned>("outEvery");
+//    std::string outputFile_ = runSetting.getParameter<std::string>("outName");
+//
+//    // load cut configuration from python file. default is histogramCutParameter_cfi.py
+//    //const edm::ParameterSet& cutOption = edm::readPSetsFrom(confPython.c_str())->getParameter<edm::ParameterSet>("process");
+//    //const std::vector<edm::ParameterSet>& runSetting_ = cutOption.getParameter< std::vector<edm::ParameterSet> >("cutSet");
+//    // parser setting end }}}
+//
+//    // input files
+//    std::vector<std::string> inputFiles_;
+//
+//    // if inputFile not set, use python file : fileList_cfi.py
+//    if ( parser.stringValue("testFile").empty() )
+//        inputFiles_ = fileNames;
+//    else
+//    {
+//        // only if testFile is set, parameters from parser valid
+//        inputFiles_.push_back( parser.stringValue("testFile") );
+//        outputFile_ = parser.stringValue("outputFile");
+//        maxEvents_ = parser.integerValue("maxEvents");
+//        outputEvery_ = parser.integerValue("outputEvery");
+//    }
 
     // book a set of histograms
-    fwlite::TFileService fs = fwlite::TFileService(outputFile_.c_str());
-    TFileDirectory dir = fs.mkdir("lbSpecificDecay");
+    TCanvas* c1 = new TCanvas("c1", "", 1600,1600);
+    TH1D* h = new TH1D("eff", "", 20, 0.,10.);
 
 
-    using namespace myCut;
-    // general cut applied
-    std::vector<generalCutList*> cutLists;
-    //cutLists.push_back( new           vtxprobCut(0.15,-99. ) );
-    cutLists.push_back( new              massCut(5.0 ,  6.0) );
-    cutLists.push_back( new            cosa2dCut(0.99      ) );
-    cutLists.push_back( new                ptCut(15  ,-99. ) );
-    cutLists.push_back( new flightDist2DSigmaCut( 2., -99. ) );
-    histMain::setCutList( &cutLists );
 
-    // set main code.
-    std::vector<histMain*> mainCode;
-    //mainCode.push_back( new histMain_TkTk(&dir) );
-    mainCode.push_back( new histMain_Lam0(&dir) );
-    //mainCode.push_back( new histMain_Kshort(&dir) );
-    //mainCode.push_back( new histMain_LbTk(&dir) );
-    mainCode.push_back( new histMain_LbL0(&dir) );
-    //mainCode.push_back( new histMain_Bs(&dir) );
-    //mainCode.push_back( new histMain_findParDiff(&dir) );
-    //mainCode.push_back( new histMain_findIPdiff(&dir) );
-    //mainCode.push_back( new histMain_findVtxprobDiff(&dir) );
-    //mainCode.push_back( new histMain_ParPlot(&dir) );
-    //mainCode.push_back( new histMain_findFlightDistanceDiff(&dir) );
-    //mainCode.push_back( new histMain_findTkTkFlightDistanceDiff(&dir) );
-    //mainCode.push_back( new histMain_findLam0FlightDistanceDiff(&dir) );
-    //mainCode.push_back( new histMain_PV(&dir) );
-    //mainCode.push_back( new histMain_GenInformation(&dir) );
-    //mainCode.push_back( new histMain_JPsiGenParticle(&dir) );
-    //mainCode.push_back( new histMain_Lam0GenParticle(&dir) );
-    //mainCode.push_back( new histMain_TkTkGenParticle(&dir) );
-    //mainCode.push_back( new histMain_LbTkGenParticle(&dir) );
-    //mainCode.push_back( new histMain_LbL0GenParticle(&dir) );
+    std::vector<std::string> inputFiles_;
+    inputFiles_.push_back("reco_fourTracksVertexing_9.root");
 
     int ievt=0;
     for ( const auto& file : inputFiles_ )
     {
-        bool terminateLoop = false;
         TFile* inFile = TFile::Open( ("file://"+file).c_str() );
-        if( !inFile ) continue;
-        // ----------------------------------------------------------------------
-        // Second Part:
-        //
-        //  * loop the events in the input files
-        //  * receive the collections of interest via fwlite::Handle
-        //  * fill the histograms
-        //  * after the loop close the input file
-        // ----------------------------------------------------------------------
+        if( !inFile )
+        { printf("file : %s not found!\n", file.c_str()); continue; }
+
         fwlite::Event ev(inFile);
         for(ev.toBegin(); !ev.atEnd(); ++ev, ++ievt)
         {
-	        //edm::EventBase const & event = ev;
-	        // break loop if maximal number of events is reached
-	        if(maxEvents_>0 ? ievt+1>maxEvents_ : false)
-            { terminateLoop = true; break; }
-	        // simple event counter
-            if ( outputEvery_ > 0 )
-                if ( ievt > 0 && ievt%outputEvery_ == 0 )
-            {
-                printf( "\r  processing event: %i", ievt );
-                fflush( stdout );
-            }
-
-
-            for ( const auto& _main : mainCode )
-                _main->Process( &ev );
-
-
+            fwlite::Handle<int> handle;
+            handle.getByLabel( ev, "fourTracksFromVCCProducer", "fourTracksTotallyVertexingEfficiency", "myVertexingProcedure" );
+            int vtxEffVal = *(handle.product());
+            for(int i=0;i<9;++i)
+                if ( (vtxEffVal>>i)%2 )
+                    h->Fill(i);
         }
         inFile->Close();
-        if ( terminateLoop ) break;
         // break loop if maximal number of events is reached:
         // this has to be done twice to stop the file loop as well
     }
+    h->Draw();
+    c1->SaveAs("h_vtxEff.root");
 
-    for ( auto& cut : cutLists )
-        delete cut;
-    for ( auto& _main : mainCode )
-    {
-        _main->Clear();
-        delete _main;
-    }
-
-    printf("\n");
     return 0;
 }
