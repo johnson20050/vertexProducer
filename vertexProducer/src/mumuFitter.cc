@@ -425,7 +425,7 @@ void mumuFitter::fitAll(const edm::Event & iEvent, const edm::EventSetup & iSetu
             {
                 if (rVtxMag / sigmaRvtxMag < optD[idx][vtxSigCut]) continue;
                 if ( idx == 0 )
-                    cutRecord += 2 << 15; // fg sig cut
+                    cutRecord += 1 << 15; // fg sig cut
 
                 double pTkE = sqrt(positiveP.mag2() + optD[idx][pTkMass] * optD[idx][pTkMass]);
                 double nTkE = sqrt(negativeP.mag2() + optD[idx][nTkMass] * optD[idx][nTkMass]);
