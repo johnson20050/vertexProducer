@@ -562,7 +562,9 @@ bool tktkFitter::IsTargetPair(const myTrack& trk1, const myTrack& trk2, const MC
     bool trk2Match = false;
     for ( const MCparticle& mc : mcList )
     {
-        if ( fabs(mc.pdgId()) != 5122 ) continue;
+        if ( abs(mc.pdgId()) != 5122 ) continue;
+        if ( !mcDaugDetail->isTargetMother(mc) ) continue;
+        trk1Match = trk2Match = false;
 
         const reco::Candidate* mcPtr = &mc;
         const reco::Candidate* daugPtr = nullptr;
@@ -571,6 +573,8 @@ bool tktkFitter::IsTargetPair(const myTrack& trk1, const myTrack& trk2, const MC
             daugPtr = mcPtr->daughter( mcDaugDetail->getDaughterIdxOnLayer(2,layerIdx) );
             mcPtr = daugPtr;
         }
+        if ( !daugPtr ) continue;
+        if ( abs(daugPtr->pdgId())!=2212&&abs(daugPtr->pdgId())!=321 ) continue;
         if ( mcDaugDetail->truthMatching(trk1, *daugPtr) ) trk1Match = true;
         else
         if ( mcDaugDetail->truthMatching(trk2, *daugPtr) ) trk2Match = true;
@@ -581,12 +585,15 @@ bool tktkFitter::IsTargetPair(const myTrack& trk1, const myTrack& trk2, const MC
             daugPtr = mcPtr->daughter( mcDaugDetail->getDaughterIdxOnLayer(3,layerIdx) );
             mcPtr = daugPtr;
         }
+        if ( !daugPtr ) continue;
+        if ( abs(daugPtr->pdgId())!=2212&&abs(daugPtr->pdgId())!=321 ) continue;
         if ( mcDaugDetail->truthMatching(trk1, *daugPtr) ) trk1Match = true;
         else
         if ( mcDaugDetail->truthMatching(trk2, *daugPtr) ) trk2Match = true;
+        if ( trk1Match&&trk2Match ) return true;
     }
 
-    return trk1Match && trk2Match;
+    return false;
 }
 
 void tktkFitter::clearSomething()

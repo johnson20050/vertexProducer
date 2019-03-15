@@ -16,6 +16,7 @@
 // Method containing the algorithm for vertex reconstruction
 void fourTracksFittingMethod1::fitAll(const edm::Event & iEvent, const edm::EventSetup & iSetup)
 {
+//    std::cout << "fourTracksFittingMethod1::fitAll() : one event start\n";
 	clearAndInitializeContainer();
 	if ( !recorded ) return;
 	const reco::VertexCompositeCandidateCollection& mumuCands = *(theMuMuPairHandlePtr->product());
@@ -68,6 +69,8 @@ void fourTracksFittingMethod1::fitAll(const edm::Event & iEvent, const edm::Even
 			if ( tktkPreSelP4.M() < optD[mMassPreCut_tktk] ) continue;
 			if ( tktkPreSelP4.M() > optD[MMassPreCut_tktk] ) continue;
 
+			// preselections end
+
 			// build trackRef & TransientTracks
 			reco::TrackRef muPosTkRef = muPosCandPtr->track();
 			reco::TrackRef muNegTkRef = muNegCandPtr->track();
@@ -85,10 +88,19 @@ void fourTracksFittingMethod1::fitAll(const edm::Event & iEvent, const edm::Even
             cutRecord += 1 << 1;
 			// preselections end
             if ( useMC )
+            {
                 if ( theGenMatchHandlePtr->isValid() )
+                {
                     if ( IsTargetJPsi(muPosTransTk.track(), muNegTransTk.track(), *(theGenMatchHandlePtr->product())) )
+                    {
                         if ( IsTargetCand(tkPosTransTk.track(), tkNegTransTk.track(), *(theGenMatchHandlePtr->product())) )
+                        {
                             isTarget = -1;
+//                            std::cout << "fourTracksFittingMethod1::fitAll() : tktk match found!!!!\n";
+                        }
+                    }
+                }
+            }
 
 			// for check
 			GlobalPoint tktkVTX ( tktkCand.vertex().x(),tktkCand.vertex().y(), tktkCand.vertex().z() );
@@ -120,7 +132,8 @@ void fourTracksFittingMethod1::fitAll(const edm::Event & iEvent, const edm::Even
 			{
 				MultiTrackKinematicConstraint* mumuConstr = new TwoTrackMassKinematicConstraint( optD[mumuMassConstraint] );
 				KinematicConstrainedVertexFitter kcvFitter;
-				fourTracksKineTree = kcvFitter.fit( mumutktkCand, mumuConstr, &mumuVTX );
+				//fourTracksKineTree = kcvFitter.fit( mumutktkCand, mumuConstr, &mumuVTX );
+				fourTracksKineTree = kcvFitter.fit( mumutktkCand, mumuConstr );
 			}
 			else
 			{
@@ -233,6 +246,7 @@ void fourTracksFittingMethod1::fitAll(const edm::Event & iEvent, const edm::Even
 		}	// tktkPair loop end
 	}	// mumuPair loop end
 
+//    std::cout << "fourTracksFittingMethod1::fitAll() : one event end\n";
 	fillInContainer();
 	return;
 }

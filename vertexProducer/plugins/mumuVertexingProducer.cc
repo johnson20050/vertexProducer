@@ -53,18 +53,22 @@ mumuVertexingProducer::~mumuVertexingProducer()
 void mumuVertexingProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
     using namespace edm;
+//    std::cout << "mumuVertexingProducer produce() : 01\n";
 
     // Create V0Fitter object which reconstructs the vertices and creates
     mumuFitting.fitAll( iEvent, iSetup );
+//    std::cout << "mumuVertexingProducer produce() : 02\n";
 
     std::unique_ptr< std::vector<int> > mumuTriggerResult( new std::vector<int> );
     const std::vector<int>&  trigRes = mumuFitting.getCutResList();
     mumuTriggerResult->reserve( trigRes.size() );
     std::copy( trigRes.begin(), trigRes.end(), std::back_inserter(*mumuTriggerResult) );
     iEvent.put( std::move(mumuTriggerResult), "mumuVertexingEfficiencyBoolInt" );
+//    std::cout << "mumuVertexingProducer produce() : 03\n";
 
     for ( unsigned i = 0; i < mumuFitting.getNParticles(); ++i )
     {
+//    std::cout << "mumuVertexingProducer produce() : 03.1\n";
 
         // Create shared_ptr for each collection to be stored in the Event
         std::unique_ptr< reco::VertexCompositeCandidateCollection >
@@ -74,6 +78,7 @@ void mumuVertexingProducer::produce(edm::Event& iEvent, const edm::EventSetup& i
             iEvent.put( std::move(tktkCandList), mumuFitting.getCandName(i) );
             continue;
         }
+//    std::cout << "mumuVertexingProducer produce() : 03.2\n";
 
         const reco::VertexCompositeCandidateCollection& tktkCandCollection = mumuFitting.getCands(i);
         tktkCandList->reserve( tktkCandCollection.size() );
@@ -81,8 +86,10 @@ void mumuVertexingProducer::produce(edm::Event& iEvent, const edm::EventSetup& i
 
         // Write the collections to the Event
         iEvent.put( std::move(tktkCandList), mumuFitting.getCandName(i) );
+//    std::cout << "mumuVertexingProducer produce() : 03.3\n";
     }
 
+//    std::cout << "mumuVertexingProducer produce() : 04\n";
     return;
 }
 

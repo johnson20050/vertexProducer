@@ -57,15 +57,49 @@ bool familyRelationShip::truthMatching(const reco::Candidate& cand, const reco::
 }
 bool familyRelationShip::truthMatching(const reco::Track& trk, const reco::Candidate& mcParticle)
 {
-    const double deltaR = 0.04;
+    const double deltaRTarget = 0.25;
     if ( trk.charge() != mcParticle.charge() ) return false;
     
     // testing
-    if ( trk.eta()-mcParticle.eta() < 3.* trk.etaError() ) return false;
-    if ( trk.phi()-mcParticle.phi() < 3.* trk.phiError() ) return false;
+    bool test1 = true;
+    bool test2 = true;
+    double EtaDiff = fabs(trk.eta()-mcParticle.eta());
+    double PhiDiff = fabs(TVector2::Phi_mpi_pi(trk.phi()-mcParticle.phi()));
+    double deltaR = sqrt(EtaDiff*EtaDiff+PhiDiff*PhiDiff);
+    double deltaRErr = (trk.etaError()*EtaDiff+TVector2::Phi_mpi_pi(trk.phiError())*PhiDiff)/deltaR;
+    if (deltaR>3*deltaRErr) return false;
+    if (deltaR>3*deltaRErr) test1 = false;
+    //if ( deltaR > deltaRTarget ) return false;
+    //if ( trk.eta()-mcParticle.eta() > 2.* trk.etaError() ) return false;
+    //if ( trk.phi()-mcParticle.phi() > 2.* trk.phiError() ) return false;
+    //if ( pow(trk.eta()-mcParticle.eta(),2)+pow(TVector2::Phi_mpi_pi(trk.phi()-mcParticle.phi()),2) > deltaRTarget*deltaRTarget ) return false;
+    if ( (trk.pt()-mcParticle.pt())/mcParticle.pt() > 0.10 ) test2 = false;
+    //if ( (trk.pt()-mcParticle.pt())/mcParticle.pt() > 0.10 ) return false;
+    if ( test1 || test2 ) printf("familyRelationShip::truthMatching() : method Error res ( %s )   ,   method abs res ( %s )\n", test1?"pass":"fail", test2?"pass":"fail");
     // tested
-    return true;
+    return test1||test2;
+    //return true;
 
     //if ( pow(cand.eta()-mcParticle.eta(),2)+pow(TVector2::Phi_mpi_pi(cand.phi()-mcParticle.phi()),2) > deltaR*deltaR ) return false;
     //return true;
+}
+bool familyRelationShip::isTargetMother(const reco::GenParticle& mc)
+{
+    unsigned nTrue = 0;
+    for ( unsigned i=0; i<getNDaug(); ++i )
+    {
+        const reco::Candidate* daugPtr = &mc;
+        for ( int layerIdx = 0; layerIdx < daugLayer(i); ++layerIdx )
+        {
+            // check if particle with wrong decay mode, it is needed to be removed.
+            if ( daugPtr->status() == 2 ) return false;
+            daugPtr = daugPtr->daughter( getDaughterIdxOnLayer(i,layerIdx) );
+        }
+        if ( !daugPtr ) continue;
+        if ( abs(daugPtr->pdgId()) == 2212 || abs(daugPtr->pdgId()) == 321 || abs(daugPtr->pdgId()) == 13 )
+            ++nTrue;
+    }
+    if ( nTrue == getNDaug() )
+        return true;
+    return false;
 }

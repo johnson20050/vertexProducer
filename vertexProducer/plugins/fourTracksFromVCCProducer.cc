@@ -34,8 +34,8 @@ fourTracksFromVCCProducer::fourTracksFromVCCProducer(const edm::ParameterSet& iC
     const std::vector< edm::ParameterSet >& subConfigs
         = iConfig.getParameter < std::vector < edm::ParameterSet >> ("recoOptions");
     myFitter.reserve( subConfigs.size() );
-    fourTracksFitter::initializeEvent( iConfig, consumesCollector() );
     fourTracksFitter::UseMC( iConfig.getParameter<bool>("useMC") );
+    fourTracksFitter::initializeEvent( iConfig, consumesCollector() );
 
     produces<int>( "fourTracksTotallyVertexingEfficiency" );
     for ( const auto& subConfig : subConfigs )

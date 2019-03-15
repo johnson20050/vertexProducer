@@ -164,7 +164,9 @@ bool fourTracksFitter::IsTargetJPsi(const reco::Track& trk1, const reco::Track& 
     bool trk2Match = false;
     for ( const reco::GenParticle& mc : mcList )
     {
-        if ( fabs(mc.pdgId()) != 5122 ) continue;
+        if ( abs(mc.pdgId()) != 5122 ) continue;
+        if ( !mcDaugDetail->isTargetMother(mc) ) continue;
+        trk1Match = trk2Match = false;
 
         const reco::Candidate* mcPtr = &mc;
         const reco::Candidate* daugPtr = nullptr;
@@ -173,7 +175,14 @@ bool fourTracksFitter::IsTargetJPsi(const reco::Track& trk1, const reco::Track& 
             daugPtr = mcPtr->daughter( mcDaugDetail->getDaughterIdxOnLayer(0,layerIdx) );
             mcPtr = daugPtr;
         }
-        if ( mcPtr->mother()->pdgId() != 433 ) std::cout << "fourTracksFitter::IsTargetJPsi() ------ Warning, jpsi not found!------\n";
+        if ( !daugPtr ) continue;
+        if ( abs(daugPtr->pdgId()) != 13 ) continue;
+        //if ( mcPtr->mother()->pdgId() != 443 ) printf("fourTracksFitter::IsTargetJPsi() ------ Warning, jpsi not found!, you find %d, with mom %d------\n", mcPtr->pdgId(), mcPtr->mother()->pdgId());
+        if ( daugPtr->mother()->pdgId() != 443 )
+        {
+            //printf("fourTracksFitter::IsTargetJPsi()  1 ------ Warning, jpsi not found!, you find %d, with mom %d and grandma %d fuckyou grandma %d, fuckyoufuckyou grandmu %d------\n", mcPtr->pdgId(), mcPtr->mother()->pdgId(), mcPtr->mother()->mother()->pdgId(), mcPtr->mother()->mother()->mother()->pdgId(), mcPtr->mother()->mother()->mother()->mother()->pdgId());
+            continue;
+        }
 
         if ( mcDaugDetail->truthMatching(trk1, *daugPtr) ) trk1Match = true;
         else
@@ -187,14 +196,23 @@ bool fourTracksFitter::IsTargetJPsi(const reco::Track& trk1, const reco::Track& 
             daugPtr = mcPtr->daughter( mcDaugDetail->getDaughterIdxOnLayer(1,layerIdx) );
             mcPtr = daugPtr;
         }
-        if ( mcPtr->mother()->pdgId() != 433 ) std::cout << "fourTracksFitter::IsTargetJPsi() ------ Warning, jpsi not found!------\n";
+        if ( !daugPtr ) continue;
+        if ( (daugPtr->pdgId()) != 13 ) continue;
+        //if ( mcPtr->mother()->pdgId() != 443 ) printf("fourTracksFitter::IsTargetJPsi() ------ Warning, jpsi not found!, you find %d, with mom %d------\n", mcPtr->pdgId(), mcPtr->mother()->pdgId());
+        if ( daugPtr->mother()->pdgId() != 443 )
+        {
+            //printf("fourTracksFitter::IsTargetJPsi()  2 ------ Warning, jpsi not found!, you find %d, with mom %d and grandma %d fuckyou grandma %d, fuckyoufuckyou grandmu %d------\n", mcPtr->pdgId(), mcPtr->mother()->pdgId(), mcPtr->mother()->mother()->pdgId(), mcPtr->mother()->mother()->mother()->pdgId(), mcPtr->mother()->mother()->mother()->mother()->pdgId());
+            continue;
+        }
 
         if ( mcDaugDetail->truthMatching(trk1, *daugPtr) ) trk1Match = true;
         else
         if ( mcDaugDetail->truthMatching(trk2, *daugPtr) ) trk2Match = true;
+        if ( trk1Match && trk2Match )
+            return true;
     }
 
-    return trk1Match && trk2Match;
+    return false;
 }
 
 bool fourTracksFitter::IsTargetCand(const reco::Track& trk3, const reco::Track& trk4, const std::vector<reco::GenParticle>& mcList)
@@ -205,32 +223,58 @@ bool fourTracksFitter::IsTargetCand(const reco::Track& trk3, const reco::Track& 
     bool trk4Match = false;
     for ( const reco::GenParticle& mc : mcList )
     {
-        if ( fabs(mc.pdgId()) != 5122 ) continue;
+        if ( abs(mc.pdgId()) != 5122 ) continue;
+        if ( !mcDaugDetail->isTargetMother(mc) ) continue;
+        trk3Match = trk4Match = false;
+        
 
         const reco::Candidate* mcPtr = &mc;
         const reco::Candidate* daugPtr = nullptr;
+        //const reco::Candidate* daugPtr1 = nullptr; const reco::Candidate* daugPtr2 = nullptr;
         for ( int layerIdx = 0; layerIdx < mcDaugDetail->daugLayer(2); ++layerIdx )
         {
             daugPtr = mcPtr->daughter( mcDaugDetail->getDaughterIdxOnLayer(2,layerIdx) );
             mcPtr = daugPtr;
         }
+        if ( !daugPtr ) continue;
+        if ( abs(daugPtr->pdgId()) != 2212 && abs(daugPtr->pdgId()) != 321 )
+        {
+            //printf("fourTracksFitter::IsTargetCand()  1 ------ Warning, Kaon/Proton not found!, you find %d, with mom %d and grandma %d fuckyou grandma %d, fuckyoufuckyou grandmu %d------\n", mcPtr->pdgId(), mcPtr->mother()->pdgId(), mcPtr->mother()->mother()->pdgId(), mcPtr->mother()->mother()->mother()->pdgId(), mcPtr->mother()->mother()->mother()->mother()->pdgId());
+            continue;
+        }
+
+
         if ( mcDaugDetail->truthMatching(trk3, *daugPtr) ) trk3Match = true;
         else
         if ( mcDaugDetail->truthMatching(trk4, *daugPtr) ) trk4Match = true;
         mcPtr = &mc;
+        //daugPtr1 = daugPtr;
         daugPtr = nullptr;
         for ( int layerIdx = 0; layerIdx < mcDaugDetail->daugLayer(3); ++layerIdx )
         {
             daugPtr = mcPtr->daughter( mcDaugDetail->getDaughterIdxOnLayer(3,layerIdx) );
             mcPtr = daugPtr;
         }
+        if ( !daugPtr ) continue;
+        if ( abs(daugPtr->pdgId()) != 2212 && abs(daugPtr->pdgId()) != 321 )
+        { 
+            //printf("fourTracksFitter::IsTargetCand()  2 ------ Warning, Kaon/Proton not found!, you find %d, with mom %d and grandma %d fuckyou grandma %d, fuckyoufuckyou grandmu %d------\n", mcPtr->pdgId(), mcPtr->mother()->pdgId(), mcPtr->mother()->mother()->pdgId(), mcPtr->mother()->mother()->mother()->pdgId(), mcPtr->mother()->mother()->mother()->mother()->pdgId());
+            continue;
+        }
+        //daugPtr2 = daugPtr;
         if ( mcDaugDetail->truthMatching(trk3, *daugPtr) ) trk3Match = true;
         else
         if ( mcDaugDetail->truthMatching(trk4, *daugPtr) ) trk4Match = true;
+        //printf("tktk matching : (trk1,trk2) = (%d,%d) , mom = (%d,%d)\n", daugPtr1->pdgId(), daugPtr2->pdgId(), daugPtr1->mother()->pdgId(), daugPtr2->mother()->pdgId() );
+        if ( trk3Match&&trk4Match )
+            return true;
     }
 
-    return trk3Match && trk4Match;
+    return false;
 }
+
+        
+
 bool fourTracksFitter::overlap( const reco::RecoChargedCandidate& c1, const reco::RecoChargedCandidate& c2 )
 {
     //bool checkOverlap = [&c1, &c2]( reco::TrackRef obj1, reco::TrackRef obj2 ) 
@@ -311,9 +355,8 @@ void fourTracksFitter::recordParingSources(const edm::Event & iEvent, const edm:
     iEvent.getByToken(mumuPairToken, *(theMuMuPairHandlePtr.get()));
     iEvent.getByToken(tktkPairToken, *(theTkTkPairHandlePtr.get()));
     if ( useMC )
-    {
         iEvent.getByToken(genMatchToken, *(theGenMatchHandlePtr.get()));
-    }
+
     iSetup.get < IdealMagneticFieldRecord > ().get(*(bFieldHandlePtr.get()));
     iSetup.get < GlobalTrackingGeometryRecord > ().get(*(globTkGeomHandlePtr.get()));
     if (!(*theMuMuPairHandlePtr).isValid()) return;
@@ -335,10 +378,12 @@ void fourTracksFitter::clearRecoredSources()
     theMuMuPairHandlePtr.release();
     theTkTkPairHandlePtr.release();
     globTkGeomHandlePtr.release();
+    theGenMatchHandlePtr.release();
     bFieldHandlePtr.release();
     theBeamSpotHandlePtr.reset(new edm::Handle<reco::BeamSpot >());
     theMuMuPairHandlePtr.reset(new edm::Handle<reco::VertexCompositeCandidateCollection>());
     theTkTkPairHandlePtr.reset(new edm::Handle<reco::VertexCompositeCandidateCollection>());
+    theGenMatchHandlePtr.reset(new edm::Handle<std::vector<reco::GenParticle>>());
     globTkGeomHandlePtr.reset(new edm::ESHandle<GlobalTrackingGeometry>());
     bFieldHandlePtr.reset(new edm::ESHandle<MagneticField>());
     return;
@@ -499,6 +544,7 @@ void fourTracksFitter::initializeEvent( const edm::ParameterSet& theParameters, 
     beamspotToken = iC.consumes<reco::BeamSpot>( theParameters.getParameter<edm::InputTag>("beamspotLabel") );
     tktkPairToken = iC.consumes<reco::VertexCompositeCandidateCollection>( theParameters.getParameter<edm::InputTag>("tktkCandLabel") );
     mumuPairToken = iC.consumes<reco::VertexCompositeCandidateCollection>( theParameters.getParameter<edm::InputTag>("mumuCandLabel") );
+    genMatchToken = iC.consumes<std::vector<reco::GenParticle>>( theParameters.getParameter<edm::InputTag>("genMatchLabel") );
     return;
 }
 void fourTracksFitter::clearEvent()

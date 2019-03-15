@@ -142,6 +142,7 @@ bool TrackProducer::filter(edm::Event & iEvent, const edm::EventSetup & iSetup)
     {
         int cutRecord = 0;
         const myTrack& tk = _tkHandle.product()->at(idx);
+                selectedTracks->push_back(tk); continue; //asdf for test
         
         // if MC target is found, let it to be -1. final result will be minus.
         // of it it plus.
@@ -182,6 +183,7 @@ bool TrackProducer::IsTargetTrack(unsigned tkIdx) const
     for ( const MCparticle& mc : *(_mcMatchHandle.product()) )
     {
         if ( fabs(mc.pdgId()) != 5122 ) continue;
+        if ( !mcDaugDetail->isTargetMother(mc) ) continue;
 
         const reco::Candidate* mcPtr = &mc;
         const reco::Candidate* daugPtr = nullptr;
@@ -190,6 +192,7 @@ bool TrackProducer::IsTargetTrack(unsigned tkIdx) const
             daugPtr = mcPtr->daughter( mcDaugDetail->getDaughterIdxOnLayer(2,layerIdx) );
             mcPtr = daugPtr;
         }
+        if ( !daugPtr ) continue;
         if ( mcDaugDetail->truthMatching(tk, *daugPtr) ) return true;
         mcPtr = &mc;
         daugPtr = nullptr;
@@ -198,6 +201,7 @@ bool TrackProducer::IsTargetTrack(unsigned tkIdx) const
             daugPtr = mcPtr->daughter( mcDaugDetail->getDaughterIdxOnLayer(3,layerIdx) );
             mcPtr = daugPtr;
         }
+        if ( !daugPtr ) continue;
         if ( mcDaugDetail->truthMatching(tk, *daugPtr) ) return true;
     }
 

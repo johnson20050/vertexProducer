@@ -51,7 +51,10 @@ MuonProducer::MuonProducer(const edm::ParameterSet& iConfig):
 {
    produces<myMuonList>();
    if ( _useMC )
+   {
       mcDaugDetail = new familyRelationShipLbToPcK();
+//      std::cout << "muonProducer : mc used\n";
+   }
 
    produces<std::vector<int>>("MuonPreselectionEfficiencyBoolInt");
    return;
@@ -115,31 +118,51 @@ bool MuonProducer::filter( edm::Event& iEvent, const edm::EventSetup& iSetup)
 //------------------------------------------------------------------------------
 bool MuonProducer::IsTargetMuon( const myMuon& mu ) const
 {
+//    std::cout << "MuonProducer::IstargetMuon() 01\n";
     if ( !_useMC ) return false;
+//    std::cout << "MuonProducer::IstargetMuon() 02\n";
     if ( !_mcMatchHandle.isValid() ) return false;
+//    std::cout << "MuonProducer::IstargetMuon() 03\n";
 
     for ( const MCparticle& mc : *(_mcMatchHandle.product()) )
     {
+//    std::cout << "MuonProducer::IstargetMuon() 04.1\n";
         if ( fabs(mc.pdgId()) != 5122 ) continue;
+//    std::cout << "MuonProducer::IstargetMuon() 04.2\n";
+        if ( !mcDaugDetail->isTargetMother(mc) ) continue;
+//    std::cout << "MuonProducer::IstargetMuon() 04.3\n";
 
         const reco::Candidate* mcPtr = &mc;
         const reco::Candidate* daugPtr = nullptr;
         for ( int layerIdx = 0; layerIdx < mcDaugDetail->daugLayer(0); ++layerIdx )
         {
+//    std::cout << "MuonProducer::IstargetMuon() 04.31\n";
+//    std::cout << "MuonProducer::IstargetMuon() 04.32\n";
             daugPtr = mcPtr->daughter( mcDaugDetail->getDaughterIdxOnLayer(0,layerIdx) );
             mcPtr = daugPtr;
+//    std::cout << "MuonProducer::IstargetMuon() 04.33\n";
         }
+//    std::cout << "MuonProducer::IstargetMuon() 04.4\n";
+//    std::cout << "MuonProducer::IstargetMuon() 04.5\n";
+        if ( !daugPtr ) continue;
+//    std::cout << "MuonProducer::IstargetMuon() 04.6\n";
         if ( mcDaugDetail->truthMatching(mu, *daugPtr) ) return true;
+//    std::cout << "MuonProducer::IstargetMuon() 04.7\n";
         mcPtr = &mc;
         daugPtr = nullptr;
+//    std::cout << "MuonProducer::IstargetMuon() 04.8\n";
         for ( int layerIdx = 0; layerIdx < mcDaugDetail->daugLayer(1); ++layerIdx )
         {
             daugPtr = mcPtr->daughter( mcDaugDetail->getDaughterIdxOnLayer(1,layerIdx) );
             mcPtr = daugPtr;
         }
+//    std::cout << "MuonProducer::IstargetMuon() 04.9\n";
+        if ( !daugPtr ) continue;
         if ( mcDaugDetail->truthMatching(mu, *daugPtr) ) return true;
+//    std::cout << "MuonProducer::IstargetMuon() 04.10\n";
     }
 
+//    std::cout << "MuonProducer::IstargetMuon() end\n";
     return false;
 }
 

@@ -5,7 +5,7 @@
 class familyRelationShipLbToPcK : public familyRelationShip
 {
 public :
-    familyRelationShipLbToPcK() : familyRelationShip(4) {}
+    familyRelationShipLbToPcK() : familyRelationShip(4) { fillDaugIdx(); }
     virtual void fillDaugIdx();
 };
 

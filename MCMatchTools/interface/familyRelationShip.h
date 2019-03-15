@@ -14,9 +14,11 @@ public:
     static bool passCut(int recorder, int idx) { return (recorder>>idx)%2; }
     int daugLayer(int iDaug);
     unsigned getDaughterIdxOnLayer( int iDaug, int layer );
+    unsigned getNDaug() const { return _nDaug; }
     //define how to do truth matching
     static bool truthMatching(const reco::Candidate& cand, const reco::Candidate& mcParticle);
     static bool truthMatching(const reco::Track& trk, const reco::Candidate& mcParticle);
+    bool isTargetMother(const reco::GenParticle& mc);
 
 protected:
     unsigned *daugLayer1Idx;
