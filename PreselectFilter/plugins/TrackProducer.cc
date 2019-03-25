@@ -142,14 +142,15 @@ bool TrackProducer::filter(edm::Event & iEvent, const edm::EventSetup & iSetup)
     {
         int cutRecord = 0;
         const myTrack& tk = _tkHandle.product()->at(idx);
-                selectedTracks->push_back(tk); continue; //asdf for test
         
         // if MC target is found, let it to be -1. final result will be minus.
         // of it it plus.
         int isTarget = 1;
+        
         if ( _useMC )
             if ( IsTargetTrack(idx) )
                 isTarget = -1;
+selectedTracks->push_back(tk); continue; //asdf for test
 
         if (IsVetoTrack(idx, cutRecord)) goto recordCutArea;
         if (IsMuonTrack(idx, muList, cutRecord)) goto recordCutArea;
@@ -162,9 +163,6 @@ bool TrackProducer::filter(edm::Event & iEvent, const edm::EventSetup & iSetup)
 recordCutArea:
         trackTriggerResult->push_back(cutRecord*isTarget);
     }
-    //if (selectedTracks->size() < 2)
-    //    return false;
-
 
     iEvent.put(std::move(selectedTracks));
     iEvent.put(std::move(trackTriggerResult), "TrackPreselectionEfficiencyBoolInt");
@@ -183,7 +181,7 @@ bool TrackProducer::IsTargetTrack(unsigned tkIdx) const
     for ( const MCparticle& mc : *(_mcMatchHandle.product()) )
     {
         if ( fabs(mc.pdgId()) != 5122 ) continue;
-        if ( !mcDaugDetail->isTargetMother(mc) ) continue;
+        if ( !mcDaugDetail->isTargetGenParticleInDecayChannel(mc) ) continue;
 
         const reco::Candidate* mcPtr = &mc;
         const reco::Candidate* daugPtr = nullptr;
@@ -192,8 +190,8 @@ bool TrackProducer::IsTargetTrack(unsigned tkIdx) const
             daugPtr = mcPtr->daughter( mcDaugDetail->getDaughterIdxOnLayer(2,layerIdx) );
             mcPtr = daugPtr;
         }
-        if ( !daugPtr ) continue;
-        if ( mcDaugDetail->truthMatching(tk, *daugPtr) ) return true;
+        if ( daugPtr )
+            if ( mcDaugDetail->truthMatching(tk, *daugPtr) ) return true;
         mcPtr = &mc;
         daugPtr = nullptr;
         for ( int layerIdx = 0; layerIdx < mcDaugDetail->daugLayer(3); ++layerIdx )
@@ -201,8 +199,8 @@ bool TrackProducer::IsTargetTrack(unsigned tkIdx) const
             daugPtr = mcPtr->daughter( mcDaugDetail->getDaughterIdxOnLayer(3,layerIdx) );
             mcPtr = daugPtr;
         }
-        if ( !daugPtr ) continue;
-        if ( mcDaugDetail->truthMatching(tk, *daugPtr) ) return true;
+        if ( daugPtr )
+            if ( mcDaugDetail->truthMatching(tk, *daugPtr) ) return true;
     }
 
     return false;

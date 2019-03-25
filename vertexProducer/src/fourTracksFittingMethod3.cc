@@ -96,7 +96,6 @@ void fourTracksFittingMethod3::fitAll(const edm::Event & iEvent, const edm::Even
             GlobalVector mnMom = muNegTransTk.trajectoryStateClosestToPoint(mumuVTX).momentum();
             GlobalVector tpMom = tkPosTransTk.trajectoryStateClosestToPoint(tktkVTX).momentum();
             GlobalVector tnMom = tkNegTransTk.trajectoryStateClosestToPoint(tktkVTX).momentum();
-            //printf("muPos : %f , muNeg : %f , tkPos : %f , tkNeg : %f \n", mpMom.mag(), mnMom.mag(), tpMom.mag(), tnMom.mag() );
             if ( fabs(mpMom.mag()-tpMom.mag()) < 0.001 ) continue;
             if ( fabs(mnMom.mag()-tnMom.mag()) < 0.001 ) continue;
             cutRecord += 1 << 3;

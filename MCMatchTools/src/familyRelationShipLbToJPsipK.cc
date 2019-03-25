@@ -1,5 +1,14 @@
 #include "vertexProducer/MCMatchTools/interface/familyRelationShipLbToJPsipK.h"
 
+familyRelationShipLbToJPsipK::familyRelationShipLbToJPsipK() :
+    familyRelationShip(4)
+{
+    std::vector<unsigned> pidList = { 13, 2212, 321 };
+    setupDaugPID( pidList );
+    fillDaugIdx();
+    return;
+}
+
 // this is needed to varify.
 void familyRelationShipLbToJPsipK::fillDaugIdx()
 {

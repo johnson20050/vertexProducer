@@ -18,13 +18,24 @@ public:
     //define how to do truth matching
     static bool truthMatching(const reco::Candidate& cand, const reco::Candidate& mcParticle);
     static bool truthMatching(const reco::Track& trk, const reco::Candidate& mcParticle);
-    bool isTargetMother(const reco::GenParticle& mc);
 
+    // just for testing
+    static double deltaR_Significance(const reco::Track& trk, const reco::Candidate& mcParticle);
+    static double deltaR_Value(const reco::Track& trk, const reco::Candidate& mcParticle);
+
+
+    // if the gen particle was the particle we need, pass this function.
+    bool isTargetGenParticleInDecayChannel(const reco::GenParticle& mc);
+    
+
+    void setupDaugPID( std::vector<unsigned> pidList ) { finalStatePID = pidList; return; }
 protected:
     unsigned *daugLayer1Idx;
     unsigned *daugLayer2Idx;
     unsigned *daugLayer3Idx;
     unsigned _nDaug;
+private:
+    std::vector<unsigned> finalStatePID;
 };
 
 #endif

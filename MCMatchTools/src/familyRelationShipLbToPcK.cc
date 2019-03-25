@@ -1,5 +1,13 @@
 #include "vertexProducer/MCMatchTools/interface/familyRelationShipLbToPcK.h"
 
+familyRelationShipLbToPcK::familyRelationShipLbToPcK() :
+    familyRelationShip(4)
+{ 
+    std::vector<unsigned> pidList = { 13, 2212, 321 };
+    setupDaugPID( pidList );
+    fillDaugIdx();
+    return;
+}
 // this is needed to varify.
 void familyRelationShipLbToPcK::fillDaugIdx()
 {

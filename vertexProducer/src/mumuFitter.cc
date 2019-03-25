@@ -131,11 +131,9 @@ mumuFitter::~mumuFitter()
 // Method containing the algorithm for vertex reconstruction
 void mumuFitter::fitAll(const edm::Event & iEvent, const edm::EventSetup & iSetup)
 {
-//    std::cout << "mumuFitter::fitAll 01\n";
     clearSomething();
 
     using std::vector;
-//    using std::cout;
     using std::endl;
     using namespace reco;
     using namespace edm;
@@ -160,10 +158,8 @@ void mumuFitter::fitAll(const edm::Event & iEvent, const edm::EventSetup & iSetu
     //  from the EventSetup
     iEvent.getByToken(selMuonsToken, theMuonsHandle);
     iEvent.getByToken(beamspotToken, theBeamSpotHandle);
-//    std::cout << "mumuFitter::fitAll 02\n";
     if ( _useMC )
         iEvent.getByToken(genMatchToken, genMatchHandle);
-//    std::cout << "mumuFitter::fitAll 03\n";
     if (!theMuonsHandle->size()) return;
     if (!theBeamSpotHandle.isValid()) return;
 
@@ -237,20 +233,16 @@ void mumuFitter::fitAll(const edm::Event & iEvent, const edm::EventSetup & iSetu
 
             cutRecord += 1 << 1; // original number
 
-//    std::cout << "mumuFitter::fitAll 04.1\n";
             // if MC target is found, let it to be -1. final result will be minus.
             // or result is plus.
             if ( _useMC )
                 if ( genMatchHandle.isValid() )
                 {
-//                    std::cout << "valid genMatch Handle\n";
                     if ( IsTargetPair(transTracks[0].track(), transTracks[1].track(), *(genMatchHandle.product())) )
                     {
-//                        std::cout << "matched isTargetPair\n";
                         isTarget = -1;
                     }
                 }
-//    std::cout << "mumuFitter::fitAll 04.2\n";
 
  //           // Trajectory states to calculate DCA for the 2 tracks
  //           FreeTrajectoryState posState = posTransTkPtr->impactPointTSCP().theState();
@@ -489,7 +481,6 @@ void mumuFitter::fitAll(const edm::Event & iEvent, const edm::EventSetup & iSetu
     } // tks loop end
 
     fillInContainer();
-//    std::cout << "mumuFitter::fitAll end\n";
     return;
 }
 
@@ -560,33 +551,24 @@ bool mumuFitter::IsTargetPair(const myTrack& trk1, const myTrack& trk2, const MC
 
     bool trk1Match = false;
     bool trk2Match = false;
-//    std::cout <<"mumuFitter::IsTargetPair 01\n";
     for ( const MCparticle& mc : mcList )
     {
-//    std::cout <<"mumuFitter::IsTargetPair 02.1\n";
         if ( abs(mc.pdgId()) != 5122 ) continue;
-        if ( !mcDaugDetail->isTargetMother(mc) ) continue;
+        if ( !mcDaugDetail->isTargetGenParticleInDecayChannel(mc) ) continue;
         trk1Match = trk2Match = false;
 
         const reco::Candidate* mcPtr = &mc;
         const reco::Candidate* daugPtr = nullptr;
-//    std::cout <<"mumuFitter::IsTargetPair 02.2\n";
         for ( int layerIdx = 0; layerIdx < mcDaugDetail->daugLayer(0); ++layerIdx )
         {
             daugPtr = mcPtr->daughter( mcDaugDetail->getDaughterIdxOnLayer(0,layerIdx) );
             mcPtr = daugPtr;
-//            std::cout <<"mumuFitter::IsTargetPair 02.21\n";
         }
-//    std::cout <<"mumuFitter::IsTargetPair 02.3\n";
         if ( !daugPtr ) continue;
         if ( abs(daugPtr->pdgId()) != 13 ) continue;
-//    std::cout <<"mumuFitter::IsTargetPair 02.30\n";
         if ( daugPtr->mother()->pdgId() != 443 ) continue;
-//    std::cout <<"mumuFitter::IsTargetPair 02.31\n";
         if ( mcDaugDetail->truthMatching(trk1, *daugPtr) ) trk1Match = true;
-//    std::cout <<"mumuFitter::IsTargetPair 02.32\n";
         if ( mcDaugDetail->truthMatching(trk2, *daugPtr) ) trk2Match = true;
-//    std::cout <<"mumuFitter::IsTargetPair 02.4\n";
         mcPtr = &mc;
         daugPtr = nullptr;
         for ( int layerIdx = 0; layerIdx < mcDaugDetail->daugLayer(1); ++layerIdx )
@@ -594,13 +576,11 @@ bool mumuFitter::IsTargetPair(const myTrack& trk1, const myTrack& trk2, const MC
             daugPtr = mcPtr->daughter( mcDaugDetail->getDaughterIdxOnLayer(1,layerIdx) );
             mcPtr = daugPtr;
         }
-//    std::cout <<"mumuFitter::IsTargetPair 02.5\n";
         if ( !daugPtr ) continue;
         if ( abs(daugPtr->pdgId()) != 13 ) continue;
         if ( daugPtr->mother()->pdgId() != 443 ) continue;
         if ( mcDaugDetail->truthMatching(trk1, *daugPtr) ) trk1Match = true;
         if ( mcDaugDetail->truthMatching(trk2, *daugPtr) ) trk2Match = true;
-//    std::cout <<"mumuFitter::IsTargetPair 02.6\n";
         if ( trk1Match&&trk2Match ) return false;
     }
 

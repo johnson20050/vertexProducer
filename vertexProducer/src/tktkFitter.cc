@@ -563,7 +563,7 @@ bool tktkFitter::IsTargetPair(const myTrack& trk1, const myTrack& trk2, const MC
     for ( const MCparticle& mc : mcList )
     {
         if ( abs(mc.pdgId()) != 5122 ) continue;
-        if ( !mcDaugDetail->isTargetMother(mc) ) continue;
+        if ( !mcDaugDetail->isTargetGenParticleInDecayChannel(mc) ) continue;
         trk1Match = trk2Match = false;
 
         const reco::Candidate* mcPtr = &mc;

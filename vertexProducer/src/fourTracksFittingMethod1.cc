@@ -16,7 +16,6 @@
 // Method containing the algorithm for vertex reconstruction
 void fourTracksFittingMethod1::fitAll(const edm::Event & iEvent, const edm::EventSetup & iSetup)
 {
-//    std::cout << "fourTracksFittingMethod1::fitAll() : one event start\n";
 	clearAndInitializeContainer();
 	if ( !recorded ) return;
 	const reco::VertexCompositeCandidateCollection& mumuCands = *(theMuMuPairHandlePtr->product());
@@ -96,7 +95,6 @@ void fourTracksFittingMethod1::fitAll(const edm::Event & iEvent, const edm::Even
                         if ( IsTargetCand(tkPosTransTk.track(), tkNegTransTk.track(), *(theGenMatchHandlePtr->product())) )
                         {
                             isTarget = -1;
-//                            std::cout << "fourTracksFittingMethod1::fitAll() : tktk match found!!!!\n";
                         }
                     }
                 }
@@ -246,7 +244,6 @@ void fourTracksFittingMethod1::fitAll(const edm::Event & iEvent, const edm::Even
 		}	// tktkPair loop end
 	}	// mumuPair loop end
 
-//    std::cout << "fourTracksFittingMethod1::fitAll() : one event end\n";
 	fillInContainer();
 	return;
 }

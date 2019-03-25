@@ -4,8 +4,8 @@ import FWCore.ParameterSet.Config as cms
 useMC = True
 process = cms.Process("myVertexingProcedure")
 
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
-#process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(3) )
+#process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(30) )
 process.load("Configuration.Geometry.GeometryRecoDB_cff")
 process.load("Configuration.StandardSequences.MagneticField_cff")
 process.load('Configuration.StandardSequences.Services_cff')
@@ -46,6 +46,7 @@ if useMC:
     process.mumuVertexingProducer.useMC = cms.bool(True)
     process.tktkVertexingProducer.useMC = cms.bool(True)
     process.fourTracksFromVCCProducer.useMC = cms.bool(True)
+    process.load('vertexProducer.MCMatchTools.myGenSelector_cfi')
 else:
     process.GlobalTag = GlobalTag(process.GlobalTag, '94X_dataRun2_ReReco_EOY17_v1', '')
 # remove MC dependence
@@ -54,7 +55,7 @@ else:
 
 process.out = cms.OutputModule(
     "PoolOutputModule",
-    fileName = cms.untracked.string('reco_fourTracksVertexing.root'),
+    fileName = cms.untracked.string('reco_fourTracksVertexingMC.root'),
     outputCommands = cms.untracked.vstring(
         "drop *",
         "keep *_mumuVertexingProducer_*_myVertexingProcedure",
@@ -73,7 +74,8 @@ process.out = cms.OutputModule(
     SelectEvents = cms.untracked.PSet( SelectEvents = cms.vstring('myfilterpath') )
 )
 process.myfilterpath = cms.Path(
-      process.myMuonsSequence
+      process.myGenSelector
+    * process.myMuonsSequence
     * process.myTrackSequence
     * process.tktkVertexingProducer
     * process.mumuVertexingProducer

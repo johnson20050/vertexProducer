@@ -108,7 +108,6 @@ fourTracksFitter::fourTracksFitter(const edm::ParameterSet & theParameters,
 
 fourTracksFitter::~fourTracksFitter()
 {
-    printf("~fourTracksFitter start\n");
     delete[] optD;
     delete[] optB;
     delete[] optS;
@@ -118,7 +117,6 @@ fourTracksFitter::~fourTracksFitter()
     delete tktkCands;
 
     delete mcDaugDetail;
-    printf("~fourTracksFitter end\n");
     return;
 }
 
@@ -165,7 +163,7 @@ bool fourTracksFitter::IsTargetJPsi(const reco::Track& trk1, const reco::Track& 
     for ( const reco::GenParticle& mc : mcList )
     {
         if ( abs(mc.pdgId()) != 5122 ) continue;
-        if ( !mcDaugDetail->isTargetMother(mc) ) continue;
+        if ( !mcDaugDetail->isTargetGenParticleInDecayChannel(mc) ) continue;
         trk1Match = trk2Match = false;
 
         const reco::Candidate* mcPtr = &mc;
@@ -177,12 +175,8 @@ bool fourTracksFitter::IsTargetJPsi(const reco::Track& trk1, const reco::Track& 
         }
         if ( !daugPtr ) continue;
         if ( abs(daugPtr->pdgId()) != 13 ) continue;
-        //if ( mcPtr->mother()->pdgId() != 443 ) printf("fourTracksFitter::IsTargetJPsi() ------ Warning, jpsi not found!, you find %d, with mom %d------\n", mcPtr->pdgId(), mcPtr->mother()->pdgId());
         if ( daugPtr->mother()->pdgId() != 443 )
-        {
-            //printf("fourTracksFitter::IsTargetJPsi()  1 ------ Warning, jpsi not found!, you find %d, with mom %d and grandma %d fuckyou grandma %d, fuckyoufuckyou grandmu %d------\n", mcPtr->pdgId(), mcPtr->mother()->pdgId(), mcPtr->mother()->mother()->pdgId(), mcPtr->mother()->mother()->mother()->pdgId(), mcPtr->mother()->mother()->mother()->mother()->pdgId());
             continue;
-        }
 
         if ( mcDaugDetail->truthMatching(trk1, *daugPtr) ) trk1Match = true;
         else
@@ -198,12 +192,8 @@ bool fourTracksFitter::IsTargetJPsi(const reco::Track& trk1, const reco::Track& 
         }
         if ( !daugPtr ) continue;
         if ( (daugPtr->pdgId()) != 13 ) continue;
-        //if ( mcPtr->mother()->pdgId() != 443 ) printf("fourTracksFitter::IsTargetJPsi() ------ Warning, jpsi not found!, you find %d, with mom %d------\n", mcPtr->pdgId(), mcPtr->mother()->pdgId());
         if ( daugPtr->mother()->pdgId() != 443 )
-        {
-            //printf("fourTracksFitter::IsTargetJPsi()  2 ------ Warning, jpsi not found!, you find %d, with mom %d and grandma %d fuckyou grandma %d, fuckyoufuckyou grandmu %d------\n", mcPtr->pdgId(), mcPtr->mother()->pdgId(), mcPtr->mother()->mother()->pdgId(), mcPtr->mother()->mother()->mother()->pdgId(), mcPtr->mother()->mother()->mother()->mother()->pdgId());
             continue;
-        }
 
         if ( mcDaugDetail->truthMatching(trk1, *daugPtr) ) trk1Match = true;
         else
@@ -224,7 +214,7 @@ bool fourTracksFitter::IsTargetCand(const reco::Track& trk3, const reco::Track& 
     for ( const reco::GenParticle& mc : mcList )
     {
         if ( abs(mc.pdgId()) != 5122 ) continue;
-        if ( !mcDaugDetail->isTargetMother(mc) ) continue;
+        if ( !mcDaugDetail->isTargetGenParticleInDecayChannel(mc) ) continue;
         trk3Match = trk4Match = false;
         
 
@@ -238,10 +228,7 @@ bool fourTracksFitter::IsTargetCand(const reco::Track& trk3, const reco::Track& 
         }
         if ( !daugPtr ) continue;
         if ( abs(daugPtr->pdgId()) != 2212 && abs(daugPtr->pdgId()) != 321 )
-        {
-            //printf("fourTracksFitter::IsTargetCand()  1 ------ Warning, Kaon/Proton not found!, you find %d, with mom %d and grandma %d fuckyou grandma %d, fuckyoufuckyou grandmu %d------\n", mcPtr->pdgId(), mcPtr->mother()->pdgId(), mcPtr->mother()->mother()->pdgId(), mcPtr->mother()->mother()->mother()->pdgId(), mcPtr->mother()->mother()->mother()->mother()->pdgId());
             continue;
-        }
 
 
         if ( mcDaugDetail->truthMatching(trk3, *daugPtr) ) trk3Match = true;
@@ -257,15 +244,12 @@ bool fourTracksFitter::IsTargetCand(const reco::Track& trk3, const reco::Track& 
         }
         if ( !daugPtr ) continue;
         if ( abs(daugPtr->pdgId()) != 2212 && abs(daugPtr->pdgId()) != 321 )
-        { 
-            //printf("fourTracksFitter::IsTargetCand()  2 ------ Warning, Kaon/Proton not found!, you find %d, with mom %d and grandma %d fuckyou grandma %d, fuckyoufuckyou grandmu %d------\n", mcPtr->pdgId(), mcPtr->mother()->pdgId(), mcPtr->mother()->mother()->pdgId(), mcPtr->mother()->mother()->mother()->pdgId(), mcPtr->mother()->mother()->mother()->mother()->pdgId());
             continue;
-        }
-        //daugPtr2 = daugPtr;
+
         if ( mcDaugDetail->truthMatching(trk3, *daugPtr) ) trk3Match = true;
         else
         if ( mcDaugDetail->truthMatching(trk4, *daugPtr) ) trk4Match = true;
-        //printf("tktk matching : (trk1,trk2) = (%d,%d) , mom = (%d,%d)\n", daugPtr1->pdgId(), daugPtr2->pdgId(), daugPtr1->mother()->pdgId(), daugPtr2->mother()->pdgId() );
+
         if ( trk3Match&&trk4Match )
             return true;
     }
