@@ -1,6 +1,9 @@
 #include "vertexProducer/MCMatchTools/interface/familyRelationShip.h"
 #include "TVector2.h"
 
+#define DELTARCUT 0.03
+#define PTRATIOCUT 0.6
+
 familyRelationShip::familyRelationShip( int nDaug ) : _nDaug(nDaug)
 {
     daugLayer1Idx = new unsigned[_nDaug];
@@ -50,39 +53,34 @@ unsigned familyRelationShip::getDaughterIdxOnLayer( int iDaug, int layer )
 }
 bool familyRelationShip::truthMatching(const reco::Candidate& cand, const reco::Candidate& mcParticle)
 {
-    const double deltaR = 0.04;
     if ( cand.charge() != mcParticle.charge() ) return false;
-    if ( pow(cand.eta()-mcParticle.eta(),2)+pow(TVector2::Phi_mpi_pi(cand.phi()-mcParticle.phi()),2) > deltaR*deltaR ) return false;
+    if ( (cand.pt()-mcParticle.pt())/mcParticle.pt() > PTRATIOCUT ) return false;
+    if ( pow(cand.eta()-mcParticle.eta(),2)+pow(TVector2::Phi_mpi_pi(cand.phi()-mcParticle.phi()),2) > DELTARCUT*DELTARCUT ) return false;
     return true;
 }
 bool familyRelationShip::truthMatching(const reco::Track& trk, const reco::Candidate& mcParticle)
 {
-    const double deltaRTarget = 0.04;
     if ( trk.charge() != mcParticle.charge() ) return false;
+    if ( (trk.pt()-mcParticle.pt())/mcParticle.pt() > PTRATIOCUT )
+        return false;
     
-    // testing
-    bool test1 = false;
-    bool test2 = false;
     double EtaDiff = fabs(trk.eta()-mcParticle.eta());
     double PhiDiff = fabs(TVector2::Phi_mpi_pi(trk.phi()-mcParticle.phi()));
     double deltaR = sqrt(EtaDiff*EtaDiff+PhiDiff*PhiDiff);
-    double deltaRErr = (trk.etaError()*EtaDiff+TVector2::Phi_mpi_pi(trk.phiError())*PhiDiff)/deltaR;
+    //double deltaRErr = (trk.etaError()*EtaDiff+TVector2::Phi_mpi_pi(trk.phiError())*PhiDiff)/deltaR;
 
-    if ( (trk.pt()-mcParticle.pt())/mcParticle.pt() < 0.05 )
-        if (deltaR<3*deltaRErr) test1 = true;
-
-    if ( (trk.pt()-mcParticle.pt())/mcParticle.pt() < 0.05 )
-        if ( deltaR < deltaRTarget )
-            test2 = true;
-    return test1||test2;
+    return deltaR < DELTARCUT;
 }
 double familyRelationShip::deltaR_Significance(const reco::Track& trk, const reco::Candidate& mcParticle)
 {
     double EtaDiff = fabs(trk.eta()-mcParticle.eta());
     double PhiDiff = fabs(TVector2::Phi_mpi_pi(trk.phi()-mcParticle.phi()));
     double deltaR = sqrt(EtaDiff*EtaDiff+PhiDiff*PhiDiff);
-    double deltaRErr = (trk.etaError()*EtaDiff+TVector2::Phi_mpi_pi(trk.phiError())*PhiDiff)/deltaR;
+    double deltaRErr = (trk.etaError()*EtaDiff+fabs(TVector2::Phi_mpi_pi(trk.phiError()))*PhiDiff)/deltaR;
 
+    if ( deltaR/deltaRErr<0. )
+        printf("-----WARNING----- familyRelationShip::deltaR_Significance() : Significance < 0!!!!!!\n\t\t(deltaR,deltaRErr)=(%.6f,%.6f), (EtaDiff,PhiDiff)=(%.3f,%.3f), (etaErr,phiErr)=(%.5f,%.5f)\n",
+                deltaR,deltaRErr,EtaDiff,PhiDiff,trk.etaError(),trk.phiError());
     return deltaR/deltaRErr;
 }
 double familyRelationShip::deltaR_Value(const reco::Track& trk, const reco::Candidate& mcParticle)
