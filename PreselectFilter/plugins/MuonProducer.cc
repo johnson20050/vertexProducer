@@ -50,10 +50,10 @@ MuonProducer::MuonProducer(const edm::ParameterSet& iConfig):
     _useMC( iConfig.getParameter<bool>("useMC") )
 {
    produces<myMuonList>();
-   produces<myMuonList>("MuonPreselectionMatchedMuons");
    if ( _useMC )
    {
       mcDaugDetail = new familyRelationShipLbToPcK();
+      produces<myMuonList>("MuonPreselectionMatchedMuons");
    }
 
    produces<std::vector<int>>("MuonPreselectionEfficiencyBoolInt");
@@ -100,7 +100,7 @@ bool MuonProducer::filter( edm::Event& iEvent, const edm::EventSetup& iSetup)
         {
             cutRecord+= 1<<0;
             selectedMuons->push_back(mu);
-            if ( cutRecord < 0 )
+            if ( isTarget<0 )
                 matchedMuons->push_back(mu);
         }
         recordCutArea:

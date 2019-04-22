@@ -100,7 +100,10 @@ TrackProducer::TrackProducer(const edm::ParameterSet & iConfig):
     for (unsigned int ndx = 0; ndx < qual.size(); ndx++)
         qualities.push_back(reco::TrackBase::qualityByName(qual[ndx]));
     if ( _useMC )
+    {
         mcDaugDetail = new familyRelationShipLbToPcK();
+        produces<myTrackList>("TrackPreselectionMatchedTracks");
+    }
     return;
 }
 
@@ -131,12 +134,13 @@ bool TrackProducer::filter(edm::Event & iEvent, const edm::EventSetup & iSetup)
     ownBS = _bsHandle.isValid();
 
     std::unique_ptr < myTrackList > selectedTracks(new myTrackList);
+    std::unique_ptr < myTrackList > matchedTracks(new myTrackList);
     std::unique_ptr < std::vector<int>> trackTriggerResult( new std::vector<int> );
     selectedTracks->reserve(_tkHandle->size());
+    matchedTracks->reserve(5);
     trackTriggerResult->reserve(_tkHandle->size());
 
     // Object selection
-    //for (const myTrack & tk:*(_tkHandle.product()))
     for ( unsigned idx = 0; idx < _tkHandle->size(); ++idx )
     {
         int cutRecord = 0;
@@ -149,7 +153,6 @@ bool TrackProducer::filter(edm::Event & iEvent, const edm::EventSetup & iSetup)
         if ( _useMC )
             if ( IsTargetTrack(idx) )
                 isTarget = -1;
-selectedTracks->push_back(tk); continue; //asdf for test
 
         if (IsVetoTrack(idx, cutRecord)) goto recordCutArea;
         if (IsMuonTrack(idx, muList, cutRecord)) goto recordCutArea;
@@ -157,6 +160,8 @@ selectedTracks->push_back(tk); continue; //asdf for test
         {
             cutRecord += 1<<0;
             selectedTracks->push_back(tk);
+            if ( isTarget < 0 )
+                matchedTracks->push_back(tk);
         }
 
 recordCutArea:
@@ -164,6 +169,8 @@ recordCutArea:
     }
 
     iEvent.put(std::move(selectedTracks));
+    if ( _useMC )
+        iEvent.put(std::move(matchedTracks), "TrackPreselectionMatchedTracks");
     iEvent.put(std::move(trackTriggerResult), "TrackPreselectionEfficiencyBoolInt");
     return true;
 }
