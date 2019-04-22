@@ -25,8 +25,8 @@ process.options.allowUnscheduled = cms.untracked.bool(True)
 
 fileList=cms.untracked.vstring()
 fileList.extend([
-'file:///home/ltsai/Data/mcStep3_LbToPcK_13TeV_withoutPileUp_190219/step3_0.root',
-'file:///home/ltsai/Data/mcStep3_LbToPcK_13TeV_withoutPileUp_190219/step3_1.root',
+    'file:///home/ltsai/Data/mcStep3_LbToPcK_13TeV_withoutPileUp_190219/step3/step3_0.root',
+    'file:///home/ltsai/Data/mcStep3_LbToPcK_13TeV_withoutPileUp_190219/step3/step3_1.root',
 ])
 process.source = cms.Source("PoolSource",fileNames=fileList, duplicateCheckMode = cms.untracked.string('noDuplicateCheck'))
 from Configuration.AlCa.GlobalTag_condDBv2 import GlobalTag
@@ -46,6 +46,8 @@ if useMC:
     process.mumuVertexingProducer.useMC = cms.bool(True)
     process.tktkVertexingProducer.useMC = cms.bool(True)
     process.fourTracksFromVCCProducer.useMC = cms.bool(True)
+
+    # only choose event with LambdaB (+-5122)
     process.load('vertexProducer.MCMatchTools.myGenSelector_cfi')
 else:
     process.GlobalTag = GlobalTag(process.GlobalTag, '94X_dataRun2_ReReco_EOY17_v1', '')
@@ -61,7 +63,8 @@ process.out = cms.OutputModule(
         "keep *_mumuVertexingProducer_*_myVertexingProcedure",
         "keep *_tktkVertexingProducer_*_myVertexingProcedure",
         "keep *_fourTracksFromVCCProducer_*_myVertexingProcedure",
-        "keep *_selectedMuons_MuonPreselectionEfficiencyBoolInt_myVertexingProcedure",
+        "keep *_selectedMuons_MuonPreselection*_myVertexingProcedure",
+        #"keep *_selectedMuons_MuonPreselectionEfficiencyBoolInt_myVertexingProcedure",
         "keep *_selectedTracks_TrackPreselectionEfficiencyBoolInt_myVertexingProcedure",
         "keep *_tktkVertexingProducer_tktkVertexingEfficiencyBoolInt_myVertexingProcedure",
         "keep *_mumuVertexingProducer_mumuVertexingEfficiencyBoolInt_myVertexingProcedure",

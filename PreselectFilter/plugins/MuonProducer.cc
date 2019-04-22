@@ -50,6 +50,7 @@ MuonProducer::MuonProducer(const edm::ParameterSet& iConfig):
     _useMC( iConfig.getParameter<bool>("useMC") )
 {
    produces<myMuonList>();
+   produces<myMuonList>("MuonPreselectionMatchedMuons");
    if ( _useMC )
    {
       mcDaugDetail = new familyRelationShipLbToPcK();
@@ -75,8 +76,10 @@ bool MuonProducer::filter( edm::Event& iEvent, const edm::EventSetup& iSetup)
         iEvent.getByToken( _mcMatchToken, _mcMatchHandle );
 
     std::unique_ptr<myMuonList> selectedMuons( new myMuonList );
+    std::unique_ptr<myMuonList> matchedMuons( new myMuonList );
     std::unique_ptr<std::vector<int>> muonTriggerResult( new std::vector<int> );
     selectedMuons->reserve( _muonHandle->size() );
+    matchedMuons->reserve(2);
     muonTriggerResult->reserve( _muonHandle->size() );
 
     // Object selection
@@ -97,6 +100,8 @@ bool MuonProducer::filter( edm::Event& iEvent, const edm::EventSetup& iSetup)
         {
             cutRecord+= 1<<0;
             selectedMuons->push_back(mu);
+            if ( cutRecord < 0 )
+                matchedMuons->push_back(mu);
         }
         recordCutArea:
             muonTriggerResult->push_back(cutRecord*isTarget);
@@ -104,6 +109,8 @@ bool MuonProducer::filter( edm::Event& iEvent, const edm::EventSetup& iSetup)
 
     //unsigned keepEvent = selectedMuons->size();
     iEvent.put( std::move(selectedMuons) );
+    if ( _useMC )
+        iEvent.put( std::move(matchedMuons), "MuonPreselectionMatchedMuons" );
     iEvent.put( std::move(muonTriggerResult), "MuonPreselectionEfficiencyBoolInt" );
     
     //if ( keepEvent )

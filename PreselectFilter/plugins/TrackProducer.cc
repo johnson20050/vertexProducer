@@ -41,7 +41,6 @@ public:
     static void fillDescriptions(edm::ConfigurationDescriptions & descriptions);
 
     // Public for use !
-    //bool IsSelectedTrack(const myTrack &) const;
     bool IsTargetTrack(unsigned tkIdx) const;
     bool IsMuonTrack(unsigned tkIdx, const myMuonList & muList, int& cutRecord) const;
     bool IsVetoTrack(unsigned tkIdx, int& cutRecord) const;

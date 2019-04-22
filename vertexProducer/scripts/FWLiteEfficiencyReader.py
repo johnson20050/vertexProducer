@@ -35,6 +35,9 @@ nameLabel={
 histLabel={}
 for name, label in nameLabel.iteritems():
     histLabel.update( {ROOT.TH1I(name,name,70,0,35) : label} )
+histLabelMatched={}
+for name, label in nameLabel.iteritems():
+    histLabelMatched.update( {ROOT.TH1I('matched_'+name,name+'_matched',70,0,35) : label} )
 hTot=ROOT.TH1I('totFourVtxEfficiency','totFourVtxEfficiency',8,0,8)
 
 for fName in fileList:
@@ -42,6 +45,7 @@ for fName in fileList:
     #events=Events('ta.root')
 
     for event in events:
+        # event without MC truth matching
         for hist, label in histLabel.iteritems():
             handle=Handle('std::vector<int>')
             evtlabel=(label)
@@ -51,6 +55,23 @@ for fName in fileList:
             for effValue in encodedEffvalueList:
                 if effValue < 0:
                     effValue *= -1
+                for idx in range(1,30):
+                    if passTrig(effValue,idx):
+                        hist.Fill(idx)
+                if passTrig(effValue,0):
+                    hist.Fill(31)
+
+        # event with MC truth matching
+        for hist, label in histLabelMatched.iteritems():
+            handle=Handle('std::vector<int>')
+            evtlabel=(label)
+            event.getByLabel(evtlabel,handle)
+            encodedEffvalueList=handle.product()
+
+            for effValue in encodedEffvalueList:
+                if effValue > 0:
+                    continue;
+                effValue *= -1
                 for idx in range(1,30):
                     if passTrig(effValue,idx):
                         hist.Fill(idx)
