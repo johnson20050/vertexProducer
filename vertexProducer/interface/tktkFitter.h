@@ -82,7 +82,7 @@ private:
     reco::VertexCompositeCandidate** tmpContainerToTkTkCands;
     void enlargeAllContainer();
     void fillInContainer();
-    bool IsTargetPair(const myTrack& trk1, const myTrack& trk2, const MCparticleList& mcList );
+    bool IsTargetPair( const myTrack& trk1, const myTrack& trk2, const MCparticleList& mcList );
     familyRelationShip* mcDaugDetail;
 
     // size to tmp container. If the number of candidates spill out the tmp contaier, it need to find larger container automatically.

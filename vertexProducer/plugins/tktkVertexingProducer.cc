@@ -68,7 +68,6 @@ void tktkVertexingProducer::produce(edm::Event& iEvent, const edm::EventSetup& i
     {
 
         // Create shared_ptr for each collection to be stored in the Event
-        //std::shared_ptr< reco::VertexCompositeCandidateCollection >
         std::unique_ptr< reco::VertexCompositeCandidateCollection >
             tktkCandList( new reco::VertexCompositeCandidateCollection );
         if ( tktkFitting.nothingToWritten(i) )
