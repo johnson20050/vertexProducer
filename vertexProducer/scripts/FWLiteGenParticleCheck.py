@@ -54,24 +54,23 @@ for fName in fileList:
             if gp.pdgId() != 5122 and gp.pdgId() != -5122:
                 continue
             nParticles+=1
-            if gp.daughter(0).pdgId() == 4414:
+
+            gpDau0=gp.daughter(0)
+            for x in range(0,NUM):
+                if x < gp.numberOfDaughters():
+                    varlist[3+x]=gp.daughter(x).pdgId()
+            if gpDau0.pdgId() == 4414:
                 hGenRec.Fill(-2)
-            elif gp.daughter(0).pdgId() == -4414:
+            elif gpDau0.pdgId() == -4414:
                 hGenRec.Fill(-3)
             else:
-                varlist=[
-                        gp.numberOfDaughters(),
-                        gp.pdgId(),
-                        gp.mother().pdgId(),
-                        ]
+                varlist=[ gp.numberOfDaughters(), gp.pdgId(), gp.mother().pdgId(), ]
                 varlist.extend( [0 for x in range(0,NUM)] )
-                for x in range(0,NUM):
-                    if x < gp.numberOfDaughters():
-                        varlist[3+x]=gp.daughter(x).pdgId()
                 ntuple.Fill(array.array('f',varlist))
-            if gp.daughter(0).pdgId() == 3122:
+
+            if gpDau0.pdgId() == 3122:
                 hGenRec.Fill(-5)
-            elif gp.daughter(0).pdgId() == -3122:
+            elif gpDau0.pdgId() == -3122:
                 hGenRec.Fill(-5)
             elif gp.daughter(1).pdgId() == 3122:
                 hGenRec.Fill(-6)

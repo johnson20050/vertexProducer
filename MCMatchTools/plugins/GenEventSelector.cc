@@ -5,6 +5,10 @@
 
 #include <vector>
 #include <memory>
+#include "vertexProducer/MCMatchTools/interface/familyRelationShipBsGeneral.h"
+#include "vertexProducer/MCMatchTools/interface/familyRelationShipBdGeneral.h"
+#include "vertexProducer/MCMatchTools/interface/familyRelationShipLbToJPsiL0.h"
+#include "vertexProducer/MCMatchTools/interface/familyRelationShipLbToJPsipK.h"
 #include "vertexProducer/MCMatchTools/interface/familyRelationShipLbToPcK.h"
 
 typedef reco::GenParticle MCparticle;
@@ -29,6 +33,9 @@ private:
    familyRelationShip* _mcDaugDetail;
    
    std::vector<int> _targetPIDs;
+
+   enum mcChannels
+   { channelLbL0=0, channelLbToJPsipK=1, channelLbToPcK=2, channelBsGeneral=3, channelBdGeneral=4, totChannels };
 };
 
 //------------------------------------------------------------------------------
@@ -39,7 +46,24 @@ GenEventSelector::GenEventSelector(const edm::ParameterSet& iConfig):
     _mcMatchToken( consumes<MCparticleList>(iConfig.getParameter<edm::InputTag>("mcmatchsrc"))),
     _targetPIDs( iConfig.getParameter<std::vector<int>>("targetPIDs") )
 {
-   _mcDaugDetail = new familyRelationShipLbToPcK();
+    int mcChannel = iConfig.getParameter<int>("mcChannel");
+    switch ( mcChannel )
+    {
+        case channelLbL0:
+            _mcDaugDetail = new familyRelationShipLbToJPsiL0(); break;
+        case channelLbToJPsipK:
+            _mcDaugDetail = new familyRelationShipLbToJPsipK(); break;
+        case channelLbToPcK:
+            _mcDaugDetail = new familyRelationShipLbToJPsipK(); break;
+        case channelBsGeneral:
+            _mcDaugDetail = new familyRelationShipBsGeneral(); break;
+        case channelBdGeneral:
+            _mcDaugDetail = new familyRelationShipBdGeneral(); break;
+        default:
+            std::cerr<<"GenEventSelector::constructor : ----ERROR---- mcChannel illegal. please check the value in python file."<<std::endl;
+            exit(128);
+    }
+
    return;
 }
 
@@ -90,6 +114,9 @@ void GenEventSelector::fillDescriptions(edm::ConfigurationDescriptions& descript
    //The following says we do not know what parameters are allowed so do no validation
    // Please change this to state exactly what you do use, even if it is no parameters
    edm::ParameterSetDescription desc;
+   desc.add<edm::InputTag>("mcmatchsrc", edm::InputTag(""));
+   desc.add<std::vector<int>>("targetPIDs", std::vector<int>());
+   desc.add<int>("mcChannel", totChannels);
    desc.setUnknown();
    descriptions.addDefault(desc);
 }

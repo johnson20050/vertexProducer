@@ -17,7 +17,7 @@ void familyRelationShipLbToJPsipK::fillDaugIdx()
     daugLayer2Idx[0] = 0;
     // Lb->Jpsi->muNeg
     daugLayer1Idx[1] = 0;
-    daugLayer2Idx[1] = 0;
+    daugLayer2Idx[1] = 1;
     // Lb->proton
     daugLayer1Idx[2] = 1;
     // Lb->kaon

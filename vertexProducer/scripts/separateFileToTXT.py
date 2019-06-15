@@ -28,5 +28,3 @@ with open(args.inputFileName) as ipfile:
             fOut.write(name)
         fOut.close()
         idx+=1
-
-

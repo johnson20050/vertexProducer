@@ -13,6 +13,6 @@
 <use   name="TrackingTools/Records"/>
 <use   name="TrackingTools/TrajectoryState"/>
 <use   name="TrackingTools/PatternTools"/>
-<library   file="*.cc" name="FilterToVertexingProducedrPlugins">
+<library   file="*.cc" name="FilterToVertexingProducerPlugins">
   <flags   EDM_PLUGIN="1"/>
 </library>
