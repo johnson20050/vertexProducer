@@ -177,9 +177,9 @@ bool MuonProducer::IsSelectedMuon( const myMuon& mu, int& cutRecord ) const
    cutRecord += 1 << 7; // orig number
    if (!muon::isGoodMuon(mu, muon::TMOneStationTight) ) return false;
    cutRecord += 1 <<  9; // pass isGoodMuon
-   if ( mu.innerTrack()->hitPattern().pixelLayersWithMeasurement() < 0 ) return false;
+   if ( mu.innerTrack()->hitPattern().pixelLayersWithMeasurement() <= 0 ) return false;
    cutRecord += 1 << 10; // pass pixelLayerWithmeansurement
-   if ( mu.innerTrack()->hitPattern().trackerLayersWithMeasurement() < 5 ) return false;
+   if ( mu.innerTrack()->hitPattern().trackerLayersWithMeasurement() <= 5 ) return false;
    cutRecord += 1 << 11; // pass trackerLayerWithMeasurement
    if (!mu.innerTrack()->quality(reco::TrackBase::highPurity) ) return false;
    cutRecord += 1 << 12; // pass quality & final result

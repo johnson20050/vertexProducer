@@ -242,8 +242,8 @@ bool TrackProducer::IsMuonTrack(unsigned tkIdx, const myMuonList & muList, int& 
 bool TrackProducer::IsSelectedTrack(unsigned tkIdx, int& cutRecord) const
 {
     //if (tk.pt()<0.8)                                return false;
-    //if (tk.track()->hitPattern().numberOfValidStripHits()<4) return false;
-    //if (tk.track()->hitPattern().numberOfValidPixelHits()<1) return false;
+    if (tk.track()->hitPattern().numberOfValidStripHits()<=5) return false;
+    if (tk.track()->hitPattern().numberOfValidPixelHits()<=0) return false;
     
     cutRecord += 1 << 6; // orig number
     reco::TrackRef tkRef( _tkHandle, tkIdx );

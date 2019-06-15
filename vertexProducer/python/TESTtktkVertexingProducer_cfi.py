@@ -27,7 +27,8 @@ tktkVertexingProducer = cms.EDProducer("tktkVertexingProducer",
 
     # --V0 Vertex cuts--
     #   Vertex chi2 < 
-    vtxChi2Cut = cms.double(7.0),
+    #vtxChi2Cut = cms.double(7.0),
+    vtxChi2Cut = cms.double(15.0), # try a loose cut because p k are not needed to form a good vertex
     #   Vertex radius cut >
     #   (UNUSED)
     rVtxCut = cms.double(0.0),
