@@ -2,8 +2,8 @@
 #define __familyRelationShipBdGeneral_h__
 #include "vertexProducer/MCMatchTools/interface/familyRelationShip.h"
 // give a definition to target genparticle.
-// Lb->JPsi+p+K, JPsi->mu+mu
-// finalstateparticle is mu, proton, kaon
+// Bd->JPsi+?, JPsi->mu+mu
+// finalstateparticle is mu + ?. But ? not showing
 
 class familyRelationShipBdGeneral : public familyRelationShip
 {
