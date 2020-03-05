@@ -108,6 +108,7 @@ bool familyRelationShip::isTargetGenParticleInDecayChannel(const reco::GenPartic
         for ( int layerIdx = 0; layerIdx < daugLayer(i); ++layerIdx )
         {
             // check if particle with wrong decay mode, it is needed to be removed.
+            if ( !daugPtr ) return false;
             if ( daugPtr->status() != 2 ) return false;
             daugPtr = daugPtr->daughter( getDaughterIdxOnLayer(i,layerIdx) );
         }

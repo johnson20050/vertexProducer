@@ -8,15 +8,16 @@ def listAllDaugs(mcCand):
         print "mc candidate {} with daughter {} = {}".format(mcCand.pdgId(), dIdx, mcCand.daughter(dIdx).pdgId())
     print ""
 import ROOT
+
 from DataFormats.FWLite import Events, Handle
 import argparse
 parser=argparse.ArgumentParser(description='Process to calculate efficiency')
 parser.add_argument('--idx', type=int,default=None,                     help='number to indicate index')
 parser.add_argument('--listName',type=str,default=None,                 help='general list file name, like tmpFile_1.txt with tmpFile')
 parser.add_argument('--testFile',type=str,default=None,                 help='input test file, if use this option, [--idx] and [--listName] will not be used')
-parser.add_argument('--outputFile','-o', type=str,default='resNumOfLb', help='set output file name. output will append the result at the end of file')
+parser.add_argument('--outputFile','-o', type=str,default='genInfoRec', help='set output file name. output will append the result at the end of file')
 parser.add_argument('--ptonTrackCut','-cp',type=float,default=0.8,      help='set proton track pt cut')
-parser.add_argument('--kaonTrackCut','-ck',type=float,default=0.3,      help='set kaon track pt cut')
+parser.add_argument('--ntrkTrackCut','-ck',type=float,default=0.3,      help='set ntrk track pt cut')
 parser.add_argument('--muonTrackCut','-cm',type=float,default=4.0,      help='set muon track pt cut')
 args=parser.parse_args()
 
@@ -53,10 +54,10 @@ for fName in fileList:
             # for Lb->pQ + K, pQ->Jpsi + p
             #penQ=gp.daughter(0)
             #if abs(penQ.pdgId()) != 4414: continue
-            #kaon=gp.daughter(1)
-            #if abs(kaon.pdgId()) != 321: continue
-            #pton=gp.daughter(0).daughter(1)
-            #if abs(pton.pdgId()) != 2212: continue
+            #ntrk=gp.daughter(1)
+            #if abs(ntrk.pdgId()) != 321: continue
+            #ptrk=gp.daughter(0).daughter(1)
+            #if abs(ptrk.pdgId()) != 2212: continue
             #jpsi=gp.daughter(0).daughter(0)
             #if abs(jpsi.pdgId()) != 443: continue
 
@@ -66,18 +67,17 @@ for fName in fileList:
             jpsi=gp.daughter(1)
             if abs(jpsi.pdgId()) != 443: continue
             if abs(lam0.pdgId()) != 3122: continue
-            pton=lam0.daughter(0)
+            ptrk=lam0.daughter(0)
             if lam0.numberOfDaughters() < 2:
                 listAllDaugs(lam0)
                 continue
-            if abs(pton.pdgId()) != 2212:
+            if abs(ptrk.pdgId()) != 2212:
                 listAllDaugs(lam0)
                 continue
-            pion=lam0.daughter(1)
-            if abs(pion.pdgId()) != 211:
+            ntrk=lam0.daughter(1)
+            if abs(ntrk.pdgId()) != 211:
                 listAllDaugs(lam0)
                 continue
-            kaon=pion
 
 
             p_mu=jpsi.daughter(0)
@@ -86,12 +86,12 @@ for fName in fileList:
 
             nTotalCands+=1
             # set cuts:
-            if pton.pt() < args.ptonTrackCut: continue #proton
-            if kaon.pt() < args.kaonTrackCut: continue #kaon
+            if ptrk.pt() < args.ptrkTrackCut: continue #proton
+            if ntrk.pt() < args.ntrkTrackCut: continue #ntrk
             if p_mu.pt() < args.muonTrackCut: continue #muon
             if n_mu.pt() < args.muonTrackCut: continue #muon
-            if pton.eta()> 2.5 or pton.eta()<-2.5: continue
-            if kaon.eta()> 2.5 or kaon.eta()<-2.5: continue
+            if ptrk.eta()> 2.5 or ptrk.eta()<-2.5: continue
+            if ntrk.eta()> 2.5 or ntrk.eta()<-2.5: continue
             if p_mu.eta()> 2.5 or p_mu.eta()<-2.5: continue
             if n_mu.eta()> 2.5 or n_mu.eta()<-2.5: continue
 
